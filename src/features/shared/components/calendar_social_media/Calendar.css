@@ -1,0 +1,317 @@
+/* Estilos para el calendario */
+.calendar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  flex-shrink: 0;
+}
+
+.calendar-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 100%;
+}
+
+.calendar-day {
+  position: relative;
+  min-height: 120px;
+  border-right: 1px solid var(--mui-palette-divider);
+  border-bottom: 1px solid var(--mui-palette-divider);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.calendar-day:hover {
+  background-color: var(--mui-palette-action-hover);
+}
+
+.calendar-day.today {
+  background-color: rgba(25, 118, 210, 0.08);
+}
+
+.calendar-day.other-month {
+  background-color: var(--mui-palette-action-disabledBackground);
+  color: var(--mui-palette-text-disabled);
+}
+
+.calendar-day.drag-target {
+  background-color: var(--mui-palette-action-hover);
+  border: 2px dashed var(--mui-palette-primary-main);
+}
+
+.calendar-day-number {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.calendar-day-number.today {
+  font-weight: 700;
+  color: var(--mui-palette-primary-main);
+}
+
+.calendar-events {
+  padding: 24px 4px 4px 4px;
+}
+
+.calendar-event {
+  margin-bottom: 2px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.calendar-event.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+.calendar-event-more {
+  font-size: 0.65rem;
+  color: var(--mui-palette-text-secondary);
+  padding: 0 4px;
+  margin-top: 2px;
+}
+
+/* Estilos para eventos por color */
+.calendar-event.color-default {
+  background-color: rgba(25, 118, 210, 0.15);
+  border: 1px solid rgba(25, 118, 210, 0.3);
+  color: #1976d2;
+}
+
+.calendar-event.color-green {
+  background-color: rgba(46, 125, 50, 0.15);
+  border: 1px solid rgba(46, 125, 50, 0.3);
+  color: #2e7d32;
+}
+
+.calendar-event.color-red {
+  background-color: rgba(211, 47, 47, 0.15);
+  border: 1px solid rgba(211, 47, 47, 0.3);
+  color: #d32f2f;
+}
+
+.calendar-event.color-azure {
+  background-color: rgba(2, 136, 209, 0.15);
+  border: 1px solid rgba(2, 136, 209, 0.3);
+  color: #0288d1;
+}
+
+.calendar-event.color-warning {
+  background-color: rgba(237, 108, 2, 0.15);
+  border: 1px solid rgba(237, 108, 2, 0.3);
+  color: #ed6c02;
+}
+
+/* Estilos para el header del calendario */
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--mui-palette-divider);
+  background-color: var(--mui-palette-background-default);
+}
+
+.calendar-weekday {
+  padding: 16px;
+  text-align: center;
+  border-right: 1px solid var(--mui-palette-divider);
+  font-weight: 600;
+  color: var(--mui-palette-text-secondary);
+  background-color: var(--mui-palette-background-paper);
+}
+
+.calendar-weekday:last-child {
+  border-right: none;
+}
+
+/* Estilos para tooltips */
+.calendar-tooltip {
+  background-color: var(--mui-palette-background-paper);
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+}
+
+/* Estilos para diálogos */
+.calendar-dialog {
+  border-radius: 16px;
+}
+
+.calendar-dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+}
+
+.calendar-dialog-content {
+  padding-top: 16px;
+}
+
+.calendar-dialog-actions {
+  padding: 24px;
+  padding-top: 8px;
+}
+
+/* Estilos para formularios */
+.calendar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.calendar-form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.calendar-form-field {
+  flex: 1;
+}
+
+.calendar-color-picker {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.calendar-color-option {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 3px solid transparent;
+}
+
+.calendar-color-option:hover {
+  transform: scale(1.1);
+}
+
+.calendar-color-option.selected {
+  border-color: var(--mui-palette-background-paper);
+  box-shadow: 0 0 0 2px currentColor;
+}
+
+/* Estilos para participantes */
+.calendar-participants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.calendar-participant-chip {
+  font-size: 0.7rem;
+}
+
+/* Estilos para el indicador de arrastrar */
+.calendar-drag-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background-color: rgba(25, 118, 210, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .calendar-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  
+  .calendar-day {
+    min-height: 80px;
+  }
+  
+  .calendar-event {
+    font-size: 0.6rem;
+    padding: 1px 2px;
+  }
+  
+  .calendar-form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .calendar-dialog {
+    margin: 16px;
+  }
+}
+
+/* Modo oscuro */
+[data-mui-color-scheme="dark"] .calendar-day.other-month {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-mui-color-scheme="dark"] .calendar-day.today {
+  background-color: rgba(25, 118, 210, 0.2);
+}
+
+[data-mui-color-scheme="dark"] .calendar-tooltip {
+  background-color: var(--mui-palette-background-paper);
+  border-color: var(--mui-palette-divider);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-event {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes dragPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.calendar-day.drag-target {
+  animation: dragPulse 1s infinite;
+} 

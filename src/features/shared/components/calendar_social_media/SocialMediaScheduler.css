@@ -1,0 +1,484 @@
+/* Estilos para el Social Media Scheduler */
+.scheduler-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.scheduler-header {
+  flex-shrink: 0;
+  /* 🎨 Gradiente sutil púrpura en el header */
+  background: linear-gradient(135deg, rgba(91, 36, 183, 0.02) 0%, rgba(64, 87, 217, 0.02) 100%);
+  border-bottom: 1px solid rgba(91, 36, 183, 0.1);
+}
+
+.scheduler-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.scheduler-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  height: 100%;
+}
+
+.scheduler-time-column {
+  border-right: 1px solid var(--mui-palette-divider);
+  background-color: var(--mui-palette-background-default);
+  /* 🎨 Borde sutil púrpura */
+  border-right-color: rgba(91, 36, 183, 0.15);
+}
+
+.scheduler-time-slot {
+  height: 60px;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+  /* 🎨 Borde inferior sutil púrpura */
+  border-bottom-color: rgba(91, 36, 183, 0.08);
+}
+
+.scheduler-time-slot.current {
+  background-color: rgba(91, 36, 183, 0.08);
+  border-left: 3px solid #5b24b7;
+  font-weight: 600;
+  color: #5b24b7;
+}
+
+.scheduler-time-slot:hover {
+  background-color: rgba(91, 36, 183, 0.05);
+  border-left: 2px solid rgba(91, 36, 183, 0.3);
+}
+
+.scheduler-posts-column {
+  position: relative;
+}
+
+.scheduler-post-slot {
+  height: 60px;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  /* 🎨 Borde inferior sutil púrpura */
+  border-bottom-color: rgba(91, 36, 183, 0.08);
+}
+
+.scheduler-post-slot:hover {
+  background-color: rgba(91, 36, 183, 0.03);
+  border-left: 2px solid rgba(91, 36, 183, 0.2);
+}
+
+.scheduler-post-slot.drag-target {
+  background-color: rgba(91, 36, 183, 0.1);
+  border: 2px dashed #5b24b7;
+  border-radius: 4px;
+}
+
+.scheduler-post-slot.current {
+  background-color: rgba(91, 36, 183, 0.05);
+  border-left: 2px solid rgba(91, 36, 183, 0.4);
+}
+
+/* Línea de tiempo actual */
+.current-time-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #5b24b7 0%, #4057d9 50%, #3b68df 100%);
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(91, 36, 183, 0.4);
+}
+
+.current-time-line::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -4px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #5b24b7;
+}
+
+/* Estilos para posts de redes sociales */
+.social-media-post {
+  margin-bottom: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  /* 🎨 Sombra sutil púrpura */
+  box-shadow: 0 2px 4px rgba(91, 36, 183, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+.social-media-post:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(91, 36, 183, 0.2);
+  border-color: rgba(91, 36, 183, 0.3);
+  background: linear-gradient(135deg, rgba(91, 36, 183, 0.05) 0%, rgba(64, 87, 217, 0.05) 100%);
+}
+
+.social-media-post.dragging {
+  opacity: 0.7;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 8px 24px rgba(91, 36, 183, 0.3);
+}
+
+.social-media-post-more {
+  background-color: rgba(91, 36, 183, 0.1);
+  color: #5b24b7;
+  border: 1px dashed rgba(91, 36, 183, 0.3);
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.social-media-post-more:hover {
+  background-color: rgba(91, 36, 183, 0.2);
+  border-color: #5b24b7;
+}
+
+/* Estilos para plataformas de redes sociales */
+.platform-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+  /* 🎨 Sombra sutil púrpura */
+  box-shadow: 0 1px 3px rgba(91, 36, 183, 0.2);
+}
+
+.platform-twitter {
+  background-color: #1DA1F2;
+  color: white;
+}
+
+.platform-facebook {
+  background-color: #1877F2;
+  color: white;
+}
+
+.platform-instagram {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  color: white;
+}
+
+.platform-linkedin {
+  background-color: #0A66C2;
+  color: white;
+}
+
+.platform-youtube {
+  background-color: #FF0000;
+  color: white;
+}
+
+.platform-tiktok {
+  background: linear-gradient(45deg, #000000 0%, #25F4EE 50%, #FE2C55 100%);
+  color: white;
+}
+
+.platform-pinterest {
+  background-color: #BD081C;
+  color: white;
+}
+
+/* Estilos para estados */
+.status-chip {
+  font-size: 0.7rem;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-weight: 500;
+  /* 🎨 Sombra sutil púrpura */
+  box-shadow: 0 1px 2px rgba(91, 36, 183, 0.15);
+}
+
+.status-draft {
+  background-color: #ff9800;
+  color: white;
+}
+
+.status-scheduled {
+  background: linear-gradient(135deg, #5b24b7 0%, #4057d9 100%);
+  color: white;
+}
+
+.status-published {
+  background-color: #4caf50;
+  color: white;
+}
+
+.status-failed {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Estilos para el header del scheduler */
+.scheduler-header-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  background-color: var(--mui-palette-background-paper);
+  /* 🎨 Borde inferior púrpura sutil */
+  border-bottom-color: rgba(91, 36, 183, 0.15);
+}
+
+.scheduler-header-time {
+  padding: 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #5b24b7;
+  background: linear-gradient(135deg, rgba(91, 36, 183, 0.05) 0%, rgba(64, 87, 217, 0.05) 100%);
+}
+
+.scheduler-header-posts {
+  padding: 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #5b24b7;
+  background: linear-gradient(135deg, rgba(91, 36, 183, 0.05) 0%, rgba(64, 87, 217, 0.05) 100%);
+}
+
+/* Estilos para tooltips */
+.scheduler-tooltip {
+  background-color: var(--mui-palette-background-paper);
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* 🎨 Borde púrpura sutil */
+  border-color: rgba(91, 36, 183, 0.2);
+}
+
+/* 🎨 Estilos para botones de navegación */
+.scheduler-nav-button {
+  color: #5b24b7 !important;
+  border-color: rgba(91, 36, 183, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+.scheduler-nav-button:hover {
+  background-color: rgba(91, 36, 183, 0.1) !important;
+  border-color: #5b24b7 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(91, 36, 183, 0.2);
+}
+
+.scheduler-nav-button.Mui-selected {
+  background-color: rgba(91, 36, 183, 0.15) !important;
+  color: #5b24b7 !important;
+  border-color: #5b24b7 !important;
+}
+
+/* 🎨 Estilos para el botón de agregar post */
+.add-post-button {
+  background: linear-gradient(135deg, #5b24b7 0%, #4057d9 100%) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 8px rgba(91, 36, 183, 0.3) !important;
+}
+
+.add-post-button:hover {
+  background: linear-gradient(135deg, #4a1f9e 0%, #3649c7 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(91, 36, 183, 0.4) !important;
+}
+
+/* 🎨 Estilos para indicadores de día actual */
+.today-indicator {
+  background: linear-gradient(135deg, #5b24b7 0%, #4057d9 100%);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 8px rgba(91, 36, 183, 0.3);
+}
+
+/* 🎨 Estilos para días con posts */
+.day-with-posts {
+  position: relative;
+}
+
+.day-with-posts::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: linear-gradient(135deg, #5b24b7 0%, #4057d9 100%);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(91, 36, 183, 0.3);
+}
+
+/* 🎨 Estilos para fin de semana */
+.weekend-day {
+  color: rgba(91, 36, 183, 0.6);
+  font-style: italic;
+}
+
+/* 🎨 Estilos para días pasados */
+.past-day {
+  color: rgba(91, 36, 183, 0.4);
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scheduler-grid {
+    grid-template-columns: 60px 1fr;
+  }
+  
+  .scheduler-time-slot,
+  .scheduler-post-slot {
+    height: 50px;
+  }
+  
+  .social-media-post {
+    padding: 4px 6px;
+    font-size: 0.75rem;
+  }
+  
+  .platform-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .scheduler-header-grid {
+    grid-template-columns: 60px 1fr;
+  }
+}
+
+/* Modo oscuro */
+[data-mui-color-scheme="dark"] .scheduler-time-slot.current {
+  background-color: rgba(91, 36, 183, 0.15);
+  color: #a78bfa;
+}
+
+[data-mui-color-scheme="dark"] .scheduler-post-slot.current {
+  background-color: rgba(91, 36, 183, 0.1);
+}
+
+[data-mui-color-scheme="dark"] .scheduler-tooltip {
+  background-color: #1a1a2e;
+  border-color: rgba(91, 36, 183, 0.3);
+}
+
+[data-mui-color-scheme="dark"] .social-media-post {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(30, 27, 58, 0.95) 100%);
+  border-color: rgba(91, 36, 183, 0.2);
+}
+
+[data-mui-color-scheme="dark"] .social-media-post:hover {
+  background: linear-gradient(135deg, rgba(91, 36, 183, 0.1) 0%, rgba(64, 87, 217, 0.1) 100%);
+  border-color: rgba(91, 36, 183, 0.4);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.social-media-post {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes dragPulse {
+  0% {
+    box-shadow: 0 2px 4px rgba(91, 36, 183, 0.1);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(91, 36, 183, 0.3);
+  }
+  100% {
+    box-shadow: 0 2px 4px rgba(91, 36, 183, 0.1);
+  }
+}
+
+.scheduler-post-slot.drag-target {
+  animation: dragPulse 1s infinite;
+}
+
+/* Scrollbar personalizado */
+.scheduler-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scheduler-body::-webkit-scrollbar-track {
+  background: rgba(91, 36, 183, 0.05);
+}
+
+.scheduler-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #5b24b7 0%, #4057d9 100%);
+  border-radius: 4px;
+}
+
+.scheduler-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #4a1f9e 0%, #3649c7 100%);
+}
+
+.scheduler-body {
+  scrollbar-width: thin;
+  scrollbar-color: #5b24b7 rgba(91, 36, 183, 0.05);
+}
+
+.scheduler-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* 🎨 Fondo sutil púrpura */
+  background: linear-gradient(135deg, rgba(91, 36, 183, 0.01) 0%, rgba(64, 87, 217, 0.01) 100%);
+}
+
+.scheduler-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scheduler-body::-webkit-scrollbar-track {
+  background: rgba(91, 36, 183, 0.05);
+  border-radius: 4px;
+}
+
+.scheduler-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #5b24b7 0%, #4057d9 100%);
+  border-radius: 4px;
+}
+
+.scheduler-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #4a1f9e 0%, #3649c7 100%);
+}
+
+.scheduler-body::-webkit-scrollbar-corner {
+  background: rgba(91, 36, 183, 0.05);
+} 

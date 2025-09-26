@@ -1,0 +1,1397 @@
+---
+alwaysApply: true
+---
+
+# Guía Completa: Clean Architecture para Frontend (TypeScript + React)
+
+## CONCEPTOS FUNDAMENTALES
+
+### COMANDO: Entiende los 3 principios básicos
+1. **Separación por proximidad al dominio**: Cuanto más cerca del centro, más importante para el negocio
+2. **Dominio independiente**: La lógica de negocio no debe depender de frameworks o servicios externos
+3. **Adaptación externa**: Los servicios externos se adaptan a nuestras necesidades, no al revés
+
+## ESTRUCTURA DE CARPETAS OBLIGATORIA
+
+```
+src/
+├── domain/                    # CENTRO: Entidades y transformaciones
+│   ├── user.ts               # Tipos y funciones de usuario
+│   ├── product.ts            # Tipos y funciones de producto
+│   ├── cart.ts               # Tipos y funciones de carrito
+│   └── order.ts              # Tipos y funciones de orden
+├── application/              # CAPA 2: Casos de uso y puertos
+│   ├── addToCart.ts          # Caso de uso: agregar al carrito
+│   ├── authenticate.ts       # Caso de uso: autenticación
+│   ├── orderProducts.ts      # Caso de uso: procesar orden
+│   └── ports.ts              # Interfaces para servicios externos
+├── services/                 # CAPA 3: Adaptadores
+│   ├── authAdapter.ts        # Adaptador de autenticación
+│   ├── notificationAdapter.ts # Adaptador de notificaciones
+│   ├── paymentAdapter.ts     # Adaptador de pagos
+│   ├── storageAdapter.ts     # Adaptador de almacenamiento
+│   ├── api.ts                # Cliente API
+│   └── store.tsx             # Store global (React Context)
+├── ui/                       # CAPA 3: Componentes React
+│   └── components/
+├── lib/                      # Utilidades técnicas
+└── shared-kernel.d.ts        # Tipos compartidos globales
+```
+
+## REGLA DE DEPENDENCIAS (INVIOLABLE)
+
+**COMANDO FUNDAMENTAL**: Las dependencias SIEMPRE apuntan hacia el centro
+- ✅ `domain/` → NO DEPENDE DE NADA (ni siquiera de `lib/`)
+- ✅ `application/` → Solo puede importar de `domain/`
+- ✅ `services/` y `ui/` → Pueden importar de `application/` y `domain/`
+- ❌ NUNCA al revés
+
+```
+[UI/Services] → [Application] → [Domain]
+```
+
+## PASO 1: CREAR SHARED KERNEL
+
+**COMANDO**: Define tipos primitivos mejorados ANTES que todo
+
+```typescript
+// shared-kernel.d.ts
+type Email = string;
+type UniqueId = string;
+type DateTimeString = string;
+type PriceCents = number;
+type Ingredient = string;
+
+// Para mejor tipado (recomendado)
+type Currency = "USD" | "EUR" | "COP";
+type Price = {
+  value: PriceCents;
+  currency: Currency;
+};
+```
+
+**REGLAS DEL SHARED KERNEL**:
+- Solo tipos que CUALQUIER parte del sistema pueda usar
+- Basado en tipos primitivos del lenguaje
+- No aumenta acoplamiento entre módulos
+- Mínimo indispensable
+
+## PASO 2: DISEÑAR DOMINIO (DOMAIN LAYER)
+
+### COMANDO: Crea tipos de entidades principales
+
+```typescript
+// domain/user.ts
+export type UserName = string;
+export type User = {
+  id: UniqueId;
+  name: UserName;
+  email: Email;
+  preferences: Ingredient[];
+  allergies: Ingredient[];
+};
+
+// domain/product.ts
+export type ProductTitle = string;
+export type Product = {
+  id: UniqueId;
+  title: ProductTitle;
+  price: PriceCents;
+  toppings: Ingredient[];
+};
+
+// domain/cart.ts
+export type Cart = {
+  products: Product[];
+};
+
+// domain/order.ts
+export type OrderStatus = "new" | "delivery" | "completed";
+export type Order = {
+  user: UniqueId;
+  cart: Cart;
+  created: DateTimeString;
+  status: OrderStatus;
+  total: PriceCents;
+};
+```
+
+### COMANDO: Crea funciones de transformación puras
+
+**REGLA**: Todas las funciones deben ser puras (sin efectos secundarios)
+
+```typescript
+// domain/user.ts
+export function hasAllergy(user: User, ingredient: Ingredient): boolean {
+  return user.allergies.includes(ingredient);
+}
+
+export function hasPreference(user: User, ingredient: Ingredient): boolean {
+  return user.preferences.includes(ingredient);
+}
+
+// domain/cart.ts
+export function addProduct(cart: Cart, product: Product): Cart {
+  return { ...cart, products: [...cart.products, product] };
+}
+
+export function contains(cart: Cart, product: Product): boolean {
+  return cart.products.some(({ id }) => id === product.id);
+}
+
+// domain/product.ts
+export function totalPrice(products: Product[]): PriceCents {
+  return products.reduce((total, { price }) => total + price, 0);
+}
+
+// domain/order.ts
+export function createOrder(user: User, cart: Cart): Order {
+  return {
+    user: user.id,
+    cart,
+    created: new Date().toISOString(),
+    status: "new",
+    total: totalPrice(cart.products),
+  };
+}
+```
+
+### COMANDO: Valida relaciones entre entidades
+- Dibuja diagrama de entidades
+- Verifica que las relaciones tengan sentido
+- Asegúrate de que tienes toda la información necesaria
+
+## PASO 3: DISEÑAR PUERTOS (APPLICATION LAYER)
+
+### COMANDO: Define puertos convenientes para TU aplicación
+
+**REGLA**: Los puertos reflejan lo que TU aplicación necesita, no lo que ofrecen servicios externos
+
+```typescript
+// application/ports.ts
+
+// Puerto para pagos
+export interface PaymentService {
+  tryPay(amount: PriceCents): Promise<boolean>;
+}
+
+// Puerto para notificaciones
+export interface NotificationService {
+  notify(message: string): void;
+}
+
+// Puerto para almacenamiento local
+export interface OrdersStorageService {
+  orders: Order[];
+  updateOrders(orders: Order[]): void;
+}
+
+export interface CartStorageService {
+  cart: Cart;
+  updateCart(cart: Cart): void;
+  emptyCart(): void;
+}
+
+// Puerto para persistencia
+export interface ApiService {
+  saveOrder(order: Order): Promise<void>;
+  getProducts(): Promise<Product[]>;
+}
+```
+
+## PASO 4: IMPLEMENTAR CASOS DE USO
+
+### COMANDO: Usa el patrón "sandwich" para casos de uso
+
+**PATRÓN OBLIGATORIO**: Efecto secundario → Transformación pura → Efecto secundario
+
+```typescript
+// application/orderProducts.ts
+
+// Stubs temporales para diseño
+const payment: PaymentService = {} as PaymentService;
+const notifier: NotificationService = {} as NotificationService;
+const orderStorage: OrdersStorageService = {} as OrdersStorageService;
+const cartStorage: CartStorageService = {} as CartStorageService;
+
+async function orderProducts(user: User, cart: Cart) {
+  // 1. Transformación pura (dominio)
+  const order = createOrder(user, cart);
+
+  // 2. Efecto secundario (pago)
+  const paid = await payment.tryPay(order.total);
+  if (!paid) return notifier.notify("Oops! 🤷");
+
+  // 3. Efecto secundario (almacenamiento)
+  const { orders } = orderStorage;
+  orderStorage.updateOrders([...orders, order]);
+  cartStorage.emptyCart();
+}
+```
+
+### COMANDO: Integra casos de uso con React usando hooks
+
+```typescript
+// application/orderProducts.ts
+export function useOrderProducts() {
+  const notifier = useNotifier();
+  const payment = usePayment();
+  const orderStorage = useOrdersStorage();
+  const cartStorage = useCartStorage();
+
+  async function orderProducts(user: User, cart: Cart) {
+    const order = createOrder(user, cart);
+
+    const paid = await payment.tryPay(order.total);
+    if (!paid) return notifier.notify("Oops! 🤷");
+
+    const { orders } = orderStorage;
+    orderStorage.updateOrders([...orders, order]);
+    cartStorage.emptyCart();
+  }
+
+  return { orderProducts };
+}
+```
+
+**NOTA**: El hook actúa como "dependency injection rudimentario" usando closures
+
+## PASO 5: IMPLEMENTAR ADAPTADORES
+
+### COMANDO: Crea adaptadores para servicios reales
+
+```typescript
+// services/paymentAdapter.ts
+import { PaymentService } from "../application/ports";
+import { fakeApi } from "./api";
+
+export function usePayment(): PaymentService {
+  return {
+    tryPay(amount: PriceCents) {
+      // Simula llamada a servicio real
+      return fakeApi(true);
+    },
+  };
+}
+
+// services/notificationAdapter.ts
+import { NotificationService } from "../application/ports";
+
+export function useNotifier(): NotificationService {
+  return {
+    notify: (message: string) => window.alert(message),
+  };
+}
+
+// services/api.ts
+export function fakeApi<TResponse>(response: TResponse): Promise<TResponse> {
+  return new Promise((res) => setTimeout(() => res(response), 450));
+}
+```
+
+### COMANDO: Implementa almacenamiento con React Context
+
+```typescript
+// services/store.tsx
+const StoreContext = React.createContext<any>({});
+export const useStore = () => useContext(StoreContext);
+
+export const Provider: React.FC = ({ children }) => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [cart, setCart] = useState<Cart>({ products: [] });
+
+  const value = {
+    orders,
+    updateOrders: setOrders,
+    cart,
+    updateCart: setCart,
+    emptyCart: () => setCart({ products: [] }),
+  };
+
+  return (
+    <StoreContext.Provider value={value}>
+      {children}
+    </StoreContext.Provider>
+  );
+};
+
+// services/storageAdapter.ts
+export function useOrdersStorage(): OrdersStorageService {
+  return useStore();
+}
+
+export function useCartStorage(): CartStorageService {
+  return useStore();
+}
+```
+
+### COMANDO: Conecta UI con casos de uso
+
+```typescript
+// ui/components/Buy.tsx
+export function Buy() {
+  const { orderProducts } = useOrderProducts();
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    setLoading(true);
+    e.preventDefault();
+
+    // Llamada directa al caso de uso
+    await orderProducts(user!, cart);
+    setLoading(false);
+  }
+
+  return (
+    <section>
+      <h2>Checkout</h2>
+      <form onSubmit={handleSubmit}>
+        <button type="submit" disabled={loading}>
+          {loading ? "Processing..." : "Order Now"}
+        </button>
+      </form>
+    </section>
+  );
+}
+```
+
+## MEJORES PRÁCTICAS ESPECÍFICAS PARA FRONTEND
+
+### COMANDO: Maneja precios correctamente
+
+```typescript
+// ❌ Malo: solo número
+type PriceCents = number;
+
+// ✅ Bueno: objeto con moneda
+type Currency = "USD" | "EUR" | "COP";
+type Price = {
+  value: PriceCents;
+  currency: Currency;
+};
+```
+
+**REGLA**: Siempre almacena dinero en la fracción más pequeña (centavos)
+
+### COMANDO: Evita dependencias en el dominio
+
+```typescript
+// ❌ Malo: dependencia oculta
+export function createOrder(user: User, cart: Cart): Order {
+  return {
+    // ...
+    created: new Date().toISOString(), // Dependencia!
+  };
+}
+
+// ✅ Bueno: inyecta dependencias
+export function createOrder(
+  user: User, 
+  cart: Cart, 
+  created: DateTimeString
+): Order {
+  return {
+    // ...
+    created,
+  };
+}
+```
+
+### COMANDO: Usa branded types para mayor seguridad
+
+```typescript
+// En lugar de type aliases simples
+type UserId = string & { readonly brand: unique symbol };
+type Email = string & { readonly brand: unique symbol };
+
+// Función helper para crear branded types
+function createUserId(value: string): UserId {
+  return value as UserId;
+}
+```
+
+### COMANDO: Organiza por componentes para proyectos grandes
+
+```
+// Alternativa para proyectos complejos
+src/
+├── components/
+│   ├── authentication/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   └── adapters/
+│   ├── user-management/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   └── adapters/
+│   └── billing/
+│       ├── domain/
+│       ├── application/
+│       └── adapters/
+```
+
+### COMANDO: Haz casos de uso más testeable
+
+```typescript
+// ❌ Malo: difícil de testear
+export function useOrderProducts() {
+  const services = getServices(); // Acoplado a React
+  
+  async function orderProducts(user: User, cart: Cart) {
+    // lógica acoplada
+  }
+  
+  return { orderProducts };
+}
+
+// ✅ Bueno: fácil de testear
+type Dependencies = {
+  notifier?: NotificationService;
+  payment?: PaymentService;
+  orderStorage?: OrderStorageService;
+};
+
+async function orderProducts(
+  user: User,
+  cart: Cart,
+  dependencies: Dependencies = defaultDependencies
+) {
+  const { notifier, payment, orderStorage } = dependencies;
+  // lógica pura
+}
+
+// Hook como adaptador
+function useOrderProducts() {
+  const notifier = useNotifier();
+  const payment = usePayment();
+  const orderStorage = useOrdersStorage();
+
+  return (user: User, cart: Cart) =>
+    orderProducts(user, cart, { notifier, payment, orderStorage });
+}
+```
+
+## COMANDOS DE VALIDACIÓN
+
+### COMANDO: Verifica tu implementación
+
+✅ **Checklist obligatorio**:
+- ¿El dominio no importa nada externo?
+- ¿Los casos de uso siguen el patrón sandwich?
+- ¿Los puertos reflejan TUS necesidades?
+- ¿Los adaptadores traducen APIs externas?
+- ¿Las dependencias apuntan hacia el centro?
+
+### COMANDO: Señales de problemas
+
+❌ **Red flags**:
+- Importar frameworks en el dominio
+- Casos de uso que conocen detalles de UI
+- Puertos que copian APIs externas
+- Lógica de negocio esparcida por la aplicación
+- Dificultad para testear sin UI
+
+## CUÁNDO APLICAR CLEAN ARCHITECTURE
+
+### COMANDO: Evalúa tu proyecto
+
+**APLICA COMPLETO si**:
+- Proyecto de mediano/largo plazo
+- Múltiples desarrolladores
+- Requisitos cambiantes frecuentes
+- Necesitas intercambiar servicios externos
+
+**APLICA MÍNIMO si**:
+- Proyecto pequeño o prototipo
+- Solo 1-2 desarrolladores
+- Requisitos estables
+- Tiempo limitado
+
+**MÍNIMO INDISPENSABLE**:
+1. Extrae el dominio
+2. Respeta la regla de dependencias
+
+### COMANDO: Maneja lógica de negocio compleja
+
+**REGLAS PRAGMÁTICAS**:
+- NO uses herencia inmediatamente
+- HAZ copy-paste primero, refactoriza después
+- OBSERVA patrones antes de abstraer
+- DESCOMPÓN casos de uso interdependientes
+
+## FLUJO DE DESARROLLO RECOMENDADO
+
+### COMANDO: Sigue este orden SIEMPRE
+
+1. **Diseña entidades del dominio**: Tipos y transformaciones puras
+2. **Define puertos**: Qué necesita tu aplicación del mundo exterior
+3. **Implementa casos de uso**: Orquestación usando puertos y dominio
+4. **Crea adaptadores**: Implementación real de puertos
+5. **Conecta UI**: Componentes que usan casos de uso via hooks
+
+### COMANDO: Validación continua
+
+En cada paso, pregúntate:
+- ¿Las dependencias apuntan hacia adentro?
+- ¿Puedo testear esta parte aisladamente?
+- ¿Puedo cambiar tecnologías sin afectar el dominio?
+
+---
+
+**RECUERDA**: Clean Architecture es una herramienta para gestionar complejidad. Para proyectos simples, enfócate en extraer dominio y respetar dependencias. Para proyectos complejos, aplica toda la arquitectura.
+
+
+
+
+
+## NEXT JS 14 EN ADELANTE
+
+# Guía Completa: Clean Architecture para Frontend (TypeScript + React)
+
+## CONCEPTOS FUNDAMENTALES
+
+### COMANDO: Entiende los 3 principios básicos
+1. **Separación por proximidad al dominio**: Cuanto más cerca del centro, más importante para el negocio
+2. **Dominio independiente**: La lógica de negocio no debe depender de frameworks o servicios externos
+3. **Adaptación externa**: Los servicios externos se adaptan a nuestras necesidades, no al revés
+
+## ESTRUCTURA DE CARPETAS OBLIGATORIA
+
+```
+src/
+├── domain/                    # CENTRO: Entidades y transformaciones
+│   ├── user.ts               # Tipos y funciones de usuario
+│   ├── product.ts            # Tipos y funciones de producto
+│   ├── cart.ts               # Tipos y funciones de carrito
+│   └── order.ts              # Tipos y funciones de orden
+├── application/              # CAPA 2: Casos de uso y puertos
+│   ├── addToCart.ts          # Caso de uso: agregar al carrito
+│   ├── authenticate.ts       # Caso de uso: autenticación
+│   ├── orderProducts.ts      # Caso de uso: procesar orden
+│   └── ports.ts              # Interfaces para servicios externos
+├── services/                 # CAPA 3: Adaptadores
+│   ├── authAdapter.ts        # Adaptador de autenticación
+│   ├── notificationAdapter.ts # Adaptador de notificaciones
+│   ├── paymentAdapter.ts     # Adaptador de pagos
+│   ├── storageAdapter.ts     # Adaptador de almacenamiento
+│   ├── api.ts                # Cliente API
+│   └── store.tsx             # Store global (React Context)
+├── ui/                       # CAPA 3: Componentes React
+│   └── components/
+├── lib/                      # Utilidades técnicas
+└── shared-kernel.d.ts        # Tipos compartidos globales
+```
+
+## REGLA DE DEPENDENCIAS (INVIOLABLE)
+
+**COMANDO FUNDAMENTAL**: Las dependencias SIEMPRE apuntan hacia el centro
+- ✅ `domain/` → NO DEPENDE DE NADA (ni siquiera de `lib/`)
+- ✅ `application/` → Solo puede importar de `domain/`
+- ✅ `services/` y `ui/` → Pueden importar de `application/` y `domain/`
+- ❌ NUNCA al revés
+
+```
+[UI/Services] → [Application] → [Domain]
+```
+
+## PASO 1: CREAR SHARED KERNEL
+
+**COMANDO**: Define tipos primitivos mejorados ANTES que todo
+
+```typescript
+// shared-kernel.d.ts
+type Email = string;
+type UniqueId = string;
+type DateTimeString = string;
+type PriceCents = number;
+type Ingredient = string;
+
+// Para mejor tipado (recomendado)
+type Currency = "USD" | "EUR" | "COP";
+type Price = {
+  value: PriceCents;
+  currency: Currency;
+};
+```
+
+**REGLAS DEL SHARED KERNEL**:
+- Solo tipos que CUALQUIER parte del sistema pueda usar
+- Basado en tipos primitivos del lenguaje
+- No aumenta acoplamiento entre módulos
+- Mínimo indispensable
+
+## PASO 2: DISEÑAR DOMINIO (DOMAIN LAYER)
+
+### COMANDO: Crea tipos de entidades principales
+
+```typescript
+// domain/user.ts
+export type UserName = string;
+export type User = {
+  id: UniqueId;
+  name: UserName;
+  email: Email;
+  preferences: Ingredient[];
+  allergies: Ingredient[];
+};
+
+// domain/product.ts
+export type ProductTitle = string;
+export type Product = {
+  id: UniqueId;
+  title: ProductTitle;
+  price: PriceCents;
+  toppings: Ingredient[];
+};
+
+// domain/cart.ts
+export type Cart = {
+  products: Product[];
+};
+
+// domain/order.ts
+export type OrderStatus = "new" | "delivery" | "completed";
+export type Order = {
+  user: UniqueId;
+  cart: Cart;
+  created: DateTimeString;
+  status: OrderStatus;
+  total: PriceCents;
+};
+```
+
+### COMANDO: Crea funciones de transformación puras
+
+**REGLA**: Todas las funciones deben ser puras (sin efectos secundarios)
+
+```typescript
+// domain/user.ts
+export function hasAllergy(user: User, ingredient: Ingredient): boolean {
+  return user.allergies.includes(ingredient);
+}
+
+export function hasPreference(user: User, ingredient: Ingredient): boolean {
+  return user.preferences.includes(ingredient);
+}
+
+// domain/cart.ts
+export function addProduct(cart: Cart, product: Product): Cart {
+  return { ...cart, products: [...cart.products, product] };
+}
+
+export function contains(cart: Cart, product: Product): boolean {
+  return cart.products.some(({ id }) => id === product.id);
+}
+
+// domain/product.ts
+export function totalPrice(products: Product[]): PriceCents {
+  return products.reduce((total, { price }) => total + price, 0);
+}
+
+// domain/order.ts
+export function createOrder(user: User, cart: Cart): Order {
+  return {
+    user: user.id,
+    cart,
+    created: new Date().toISOString(),
+    status: "new",
+    total: totalPrice(cart.products),
+  };
+}
+```
+
+### COMANDO: Valida relaciones entre entidades
+- Dibuja diagrama de entidades
+- Verifica que las relaciones tengan sentido
+- Asegúrate de que tienes toda la información necesaria
+
+## PASO 3: DISEÑAR PUERTOS (APPLICATION LAYER)
+
+### COMANDO: Define puertos convenientes para TU aplicación
+
+**REGLA**: Los puertos reflejan lo que TU aplicación necesita, no lo que ofrecen servicios externos
+
+```typescript
+// application/ports.ts
+
+// Puerto para pagos
+export interface PaymentService {
+  tryPay(amount: PriceCents): Promise<boolean>;
+}
+
+// Puerto para notificaciones
+export interface NotificationService {
+  notify(message: string): void;
+}
+
+// Puerto para almacenamiento local
+export interface OrdersStorageService {
+  orders: Order[];
+  updateOrders(orders: Order[]): void;
+}
+
+export interface CartStorageService {
+  cart: Cart;
+  updateCart(cart: Cart): void;
+  emptyCart(): void;
+}
+
+// Puerto para persistencia
+export interface ApiService {
+  saveOrder(order: Order): Promise<void>;
+  getProducts(): Promise<Product[]>;
+}
+```
+
+## PASO 4: IMPLEMENTAR CASOS DE USO
+
+### COMANDO: Usa el patrón "sandwich" para casos de uso
+
+**PATRÓN OBLIGATORIO**: Efecto secundario → Transformación pura → Efecto secundario
+
+```typescript
+// application/orderProducts.ts
+
+// Stubs temporales para diseño
+const payment: PaymentService = {} as PaymentService;
+const notifier: NotificationService = {} as NotificationService;
+const orderStorage: OrdersStorageService = {} as OrdersStorageService;
+const cartStorage: CartStorageService = {} as CartStorageService;
+
+async function orderProducts(user: User, cart: Cart) {
+  // 1. Transformación pura (dominio)
+  const order = createOrder(user, cart);
+
+  // 2. Efecto secundario (pago)
+  const paid = await payment.tryPay(order.total);
+  if (!paid) return notifier.notify("Oops! 🤷");
+
+  // 3. Efecto secundario (almacenamiento)
+  const { orders } = orderStorage;
+  orderStorage.updateOrders([...orders, order]);
+  cartStorage.emptyCart();
+}
+```
+
+### COMANDO: Integra casos de uso con React usando hooks
+
+```typescript
+// application/orderProducts.ts
+export function useOrderProducts() {
+  const notifier = useNotifier();
+  const payment = usePayment();
+  const orderStorage = useOrdersStorage();
+  const cartStorage = useCartStorage();
+
+  async function orderProducts(user: User, cart: Cart) {
+    const order = createOrder(user, cart);
+
+    const paid = await payment.tryPay(order.total);
+    if (!paid) return notifier.notify("Oops! 🤷");
+
+    const { orders } = orderStorage;
+    orderStorage.updateOrders([...orders, order]);
+    cartStorage.emptyCart();
+  }
+
+  return { orderProducts };
+}
+```
+
+**NOTA**: El hook actúa como "dependency injection rudimentario" usando closures
+
+## PASO 5: IMPLEMENTAR ADAPTADORES
+
+### COMANDO: Crea adaptadores para servicios reales
+
+```typescript
+// services/paymentAdapter.ts
+import { PaymentService } from "../application/ports";
+import { fakeApi } from "./api";
+
+export function usePayment(): PaymentService {
+  return {
+    tryPay(amount: PriceCents) {
+      // Simula llamada a servicio real
+      return fakeApi(true);
+    },
+  };
+}
+
+// services/notificationAdapter.ts
+import { NotificationService } from "../application/ports";
+
+export function useNotifier(): NotificationService {
+  return {
+    notify: (message: string) => window.alert(message),
+  };
+}
+
+// services/api.ts
+export function fakeApi<TResponse>(response: TResponse): Promise<TResponse> {
+  return new Promise((res) => setTimeout(() => res(response), 450));
+}
+```
+
+### COMANDO: Implementa almacenamiento con React Context
+
+```typescript
+// services/store.tsx
+const StoreContext = React.createContext<any>({});
+export const useStore = () => useContext(StoreContext);
+
+export const Provider: React.FC = ({ children }) => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [cart, setCart] = useState<Cart>({ products: [] });
+
+  const value = {
+    orders,
+    updateOrders: setOrders,
+    cart,
+    updateCart: setCart,
+    emptyCart: () => setCart({ products: [] }),
+  };
+
+  return (
+    <StoreContext.Provider value={value}>
+      {children}
+    </StoreContext.Provider>
+  );
+};
+
+// services/storageAdapter.ts
+export function useOrdersStorage(): OrdersStorageService {
+  return useStore();
+}
+
+export function useCartStorage(): CartStorageService {
+  return useStore();
+}
+```
+
+### COMANDO: Conecta UI con casos de uso
+
+```typescript
+// ui/components/Buy.tsx
+export function Buy() {
+  const { orderProducts } = useOrderProducts();
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    setLoading(true);
+    e.preventDefault();
+
+    // Llamada directa al caso de uso
+    await orderProducts(user!, cart);
+    setLoading(false);
+  }
+
+  return (
+    <section>
+      <h2>Checkout</h2>
+      <form onSubmit={handleSubmit}>
+        <button type="submit" disabled={loading}>
+          {loading ? "Processing..." : "Order Now"}
+        </button>
+      </form>
+    </section>
+  );
+}
+```
+
+## MEJORES PRÁCTICAS ESPECÍFICAS PARA FRONTEND
+
+### COMANDO: Maneja precios correctamente
+
+```typescript
+// ❌ Malo: solo número
+type PriceCents = number;
+
+// ✅ Bueno: objeto con moneda
+type Currency = "USD" | "EUR" | "COP";
+type Price = {
+  value: PriceCents;
+  currency: Currency;
+};
+```
+
+**REGLA**: Siempre almacena dinero en la fracción más pequeña (centavos)
+
+### COMANDO: Evita dependencias en el dominio
+
+```typescript
+// ❌ Malo: dependencia oculta
+export function createOrder(user: User, cart: Cart): Order {
+  return {
+    // ...
+    created: new Date().toISOString(), // Dependencia!
+  };
+}
+
+// ✅ Bueno: inyecta dependencias
+export function createOrder(
+  user: User, 
+  cart: Cart, 
+  created: DateTimeString
+): Order {
+  return {
+    // ...
+    created,
+  };
+}
+```
+
+### COMANDO: Usa branded types para mayor seguridad
+
+```typescript
+// En lugar de type aliases simples
+type UserId = string & { readonly brand: unique symbol };
+type Email = string & { readonly brand: unique symbol };
+
+// Función helper para crear branded types
+function createUserId(value: string): UserId {
+  return value as UserId;
+}
+```
+
+### COMANDO: Organiza por componentes para proyectos grandes
+
+```
+// Alternativa para proyectos complejos
+src/
+├── components/
+│   ├── authentication/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   └── adapters/
+│   ├── user-management/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   └── adapters/
+│   └── billing/
+│       ├── domain/
+│       ├── application/
+│       └── adapters/
+```
+
+### COMANDO: Haz casos de uso más testeable
+
+```typescript
+// ❌ Malo: difícil de testear
+export function useOrderProducts() {
+  const services = getServices(); // Acoplado a React
+  
+  async function orderProducts(user: User, cart: Cart) {
+    // lógica acoplada
+  }
+  
+  return { orderProducts };
+}
+
+// ✅ Bueno: fácil de testear
+type Dependencies = {
+  notifier?: NotificationService;
+  payment?: PaymentService;
+  orderStorage?: OrderStorageService;
+};
+
+async function orderProducts(
+  user: User,
+  cart: Cart,
+  dependencies: Dependencies = defaultDependencies
+) {
+  const { notifier, payment, orderStorage } = dependencies;
+  // lógica pura
+}
+
+// Hook como adaptador
+function useOrderProducts() {
+  const notifier = useNotifier();
+  const payment = usePayment();
+  const orderStorage = useOrdersStorage();
+
+  return (user: User, cart: Cart) =>
+    orderProducts(user, cart, { notifier, payment, orderStorage });
+}
+```
+
+## COMANDOS DE VALIDACIÓN
+
+### COMANDO: Verifica tu implementación
+
+✅ **Checklist obligatorio**:
+- ¿El dominio no importa nada externo?
+- ¿Los casos de uso siguen el patrón sandwich?
+- ¿Los puertos reflejan TUS necesidades?
+- ¿Los adaptadores traducen APIs externas?
+- ¿Las dependencias apuntan hacia el centro?
+
+### COMANDO: Señales de problemas
+
+❌ **Red flags**:
+- Importar frameworks en el dominio
+- Casos de uso que conocen detalles de UI
+- Puertos que copian APIs externas
+- Lógica de negocio esparcida por la aplicación
+- Dificultad para testear sin UI
+
+## CUÁNDO APLICAR CLEAN ARCHITECTURE
+
+### COMANDO: Evalúa tu proyecto
+
+**APLICA COMPLETO si**:
+- Proyecto de mediano/largo plazo
+- Múltiples desarrolladores
+- Requisitos cambiantes frecuentes
+- Necesitas intercambiar servicios externos
+
+**APLICA MÍNIMO si**:
+- Proyecto pequeño o prototipo
+- Solo 1-2 desarrolladores
+- Requisitos estables
+- Tiempo limitado
+
+**MÍNIMO INDISPENSABLE**:
+1. Extrae el dominio
+2. Respeta la regla de dependencias
+
+### COMANDO: Maneja lógica de negocio compleja
+
+**REGLAS PRAGMÁTICAS**:
+- NO uses herencia inmediatamente
+- HAZ copy-paste primero, refactoriza después
+- OBSERVA patrones antes de abstraer
+- DESCOMPÓN casos de uso interdependientes
+
+## FLUJO DE DESARROLLO RECOMENDADO
+
+### COMANDO: Sigue este orden SIEMPRE
+
+1. **Diseña entidades del dominio**: Tipos y transformaciones puras
+2. **Define puertos**: Qué necesita tu aplicación del mundo exterior
+3. **Implementa casos de uso**: Orquestación usando puertos y dominio
+4. **Crea adaptadores**: Implementación real de puertos
+5. **Conecta UI**: Componentes que usan casos de uso via hooks
+
+### COMANDO: Validación continua
+
+En cada paso, pregúntate:
+- ¿Las dependencias apuntan hacia adentro?
+- ¿Puedo testear esta parte aisladamente?
+- ¿Puedo cambiar tecnologías sin afectar el dominio?
+
+## ADAPTACIÓN PARA NEXT.JS 14+ (APP ROUTER)
+
+### COMANDO: Estructura de carpetas híbrida para Next.js
+
+```
+src/
+├── app/                      # Next.js App Router
+│   ├── (auth)/
+│   │   ├── login/
+│   │   │   └── page.tsx     # Server Component
+│   │   └── register/
+│   │       └── page.tsx     # Server Component
+│   ├── dashboard/
+│   │   ├── page.tsx         # Server Component
+│   │   └── loading.tsx      # Loading UI
+│   ├── api/                 # API Routes
+│   │   └── orders/
+│   │       └── route.ts     # Server Actions como adaptadores
+│   ├── layout.tsx           # Root Layout
+│   └── page.tsx             # Home Page
+├── core/                    # Clean Architecture Core
+│   ├── domain/              # Entidades y transformaciones
+│   ├── application/         # Casos de uso y puertos
+│   └── infrastructure/      # Adaptadores (renombrado de services/)
+│       ├── adapters/
+│       ├── server-actions/  # Server Actions específicos
+│       └── providers/       # React Context Providers
+└── components/              # Componentes UI reutilizables
+    ├── client/              # "use client" components
+    └── server/              # Server components
+```
+
+### COMANDO: Maneja Server vs Client Components
+
+```typescript
+// components/server/ProductList.tsx (Server Component)
+import { getProducts } from "@/core/infrastructure/adapters/productAdapter";
+
+export default async function ProductList() {
+  // Datos se obtienen en el servidor
+  const products = await getProducts();
+  
+  return (
+    <div>
+      {products.map(product => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
+  );
+}
+
+// components/client/AddToCartButton.tsx (Client Component)
+"use client";
+
+import { useAddToCart } from "@/core/application/addToCart";
+
+export default function AddToCartButton({ product }: { product: Product }) {
+  const { addToCart } = useAddToCart();
+  
+  const handleClick = () => {
+    addToCart(product);
+  };
+  
+  return <button onClick={handleClick}>Add to Cart</button>;
+}
+```
+
+### COMANDO: Implementa Server Actions como adaptadores
+
+```typescript
+// core/infrastructure/server-actions/orderActions.ts
+"use server";
+
+import { orderProducts } from "@/core/application/orderProducts";
+import { redirect } from "next/navigation";
+
+export async function processOrderAction(formData: FormData) {
+  const userId = formData.get("userId") as string;
+  const cartData = formData.get("cart") as string;
+  
+  try {
+    // Usa el caso de uso existente
+    const result = await orderProducts(
+      JSON.parse(userId),
+      JSON.parse(cartData),
+      {
+        // Inyecta dependencias del servidor
+        payment: getServerPaymentAdapter(),
+        notifier: getServerNotificationAdapter(),
+        orderStorage: getServerStorageAdapter(),
+      }
+    );
+    
+    if (result.success) {
+      redirect("/orders/success");
+    }
+  } catch (error) {
+    throw new Error("Order processing failed");
+  }
+}
+
+// app/checkout/page.tsx
+import { processOrderAction } from "@/core/infrastructure/server-actions/orderActions";
+
+export default function CheckoutPage() {
+  return (
+    <form action={processOrderAction}>
+      <input type="hidden" name="userId" value={JSON.stringify(user)} />
+      <input type="hidden" name="cart" value={JSON.stringify(cart)} />
+      <button type="submit">Process Order</button>
+    </form>
+  );
+}
+```
+
+### COMANDO: Adapta puertos para entorno servidor/cliente
+
+```typescript
+// core/application/ports.ts
+
+// Puerto universal (funciona en server y client)
+export interface PaymentService {
+  tryPay(amount: PriceCents): Promise<boolean>;
+}
+
+// Puerto específico para servidor
+export interface ServerPaymentService extends PaymentService {
+  validatePayment(transactionId: string): Promise<boolean>;
+}
+
+// Puerto específico para cliente
+export interface ClientPaymentService extends PaymentService {
+  initializePaymentWidget(): void;
+}
+
+// core/infrastructure/adapters/paymentAdapter.ts
+import { isServer } from "@/lib/utils";
+
+export function getPaymentAdapter(): PaymentService {
+  if (isServer()) {
+    return getServerPaymentAdapter();
+  }
+  return getClientPaymentAdapter();
+}
+```
+
+### COMANDO: Maneja estado con Zustand + Server State
+
+```typescript
+// core/infrastructure/providers/storeProvider.tsx
+"use client";
+
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
+
+interface AppState {
+  cart: Cart;
+  addToCart: (product: Product) => void;
+  clearCart: () => void;
+}
+
+export const useAppStore = create<AppState>()(
+  devtools(
+    persist(
+      (set, get) => ({
+        cart: { products: [] },
+        
+        addToCart: (product) => set((state) => ({
+          cart: addProduct(state.cart, product) // Usa función del dominio
+        })),
+        
+        clearCart: () => set({ cart: { products: [] } }),
+      }),
+      { name: 'app-store' }
+    )
+  )
+);
+
+// app/layout.tsx
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <StoreProvider>
+          {children}
+        </StoreProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### COMANDO: Implementa casos de uso híbridos
+
+```typescript
+// core/application/orderProducts.ts
+
+// Versión para cliente
+export function useOrderProducts() {
+  const { clearCart } = useAppStore();
+  
+  return async (user: User, cart: Cart) => {
+    // Llama a Server Action
+    const formData = new FormData();
+    formData.append("userId", JSON.stringify(user));
+    formData.append("cart", JSON.stringify(cart));
+    
+    await processOrderAction(formData);
+    clearCart(); // Limpia estado cliente
+  };
+}
+
+// Versión para servidor (usada por Server Actions)
+export async function orderProductsServer(
+  user: User, 
+  cart: Cart,
+  dependencies: ServerDependencies
+) {
+  const order = createOrder(user, cart);
+  
+  const paid = await dependencies.payment.tryPay(order.total);
+  if (!paid) throw new Error("Payment failed");
+  
+  await dependencies.orderStorage.save(order);
+  
+  return { success: true, orderId: order.id };
+}
+```
+
+### COMANDO: Maneja loading states con Suspense
+
+```typescript
+// app/products/page.tsx
+import { Suspense } from 'react';
+import ProductList from '@/components/server/ProductList';
+import ProductListSkeleton from '@/components/server/ProductListSkeleton';
+
+export default function ProductsPage() {
+  return (
+    <div>
+      <h1>Products</h1>
+      <Suspense fallback={<ProductListSkeleton />}>
+        <ProductList />
+      </Suspense>
+    </div>
+  );
+}
+
+// components/server/ProductList.tsx
+export default async function ProductList() {
+  // Esta función puede tardar
+  const products = await getProductsFromDomain();
+  
+  return (
+    <div>
+      {products.map(product => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
+  );
+}
+```
+
+### COMANDO: Optimiza con streaming y parallel data fetching
+
+```typescript
+// app/dashboard/page.tsx
+export default async function DashboardPage() {
+  // Fetch en paralelo
+  const [user, orders, cartItems] = await Promise.all([
+    getUserData(),
+    getOrderHistory(),
+    getCartContents()
+  ]);
+
+  return (
+    <div>
+      <UserProfile user={user} />
+      <Suspense fallback={<OrdersSkeleton />}>
+        <OrderHistory orders={orders} />
+      </Suspense>
+      <Suspense fallback={<CartSkeleton />}>
+        <CartSummary items={cartItems} />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+### COMANDOS ESPECÍFICOS PARA NEXT.JS 14+
+
+**COMANDO: Separación Server/Client**
+- Server Components → Fetching inicial, SEO, performance
+- Client Components → Interactividad, estado local
+- Server Actions → Mutaciones, formularios
+
+**COMANDO: Adaptadores híbridos**
+- Un puerto, múltiples implementaciones (server/client)
+- Factory pattern para seleccionar implementación correcta
+- Casos de uso que funcionan en ambos entornos
+
+**COMANDO: Estado híbrido**
+- Server state → Datos del dominio (React Query/SWR)
+- Client state → UI y preferencias (Zustand/Context)
+- Persistent state → Carrito, configuración (localStorage sync)
+
+**COMANDO: Validación del flujo Next.js**
+✅ ¿Los casos de uso funcionan tanto en server como client?
+✅ ¿Los adaptadores se adaptan al entorno de ejecución?
+✅ ¿El dominio sigue siendo independiente de Next.js?
+✅ ¿Los Server Actions solo orquestan, no contienen lógica de negocio?
+
+---
+
+**RECUERDA**: Clean Architecture es una herramienta para gestionar complejidad. Para proyectos simples, enfócate en extraer dominio y respetar dependencias. Para proyectos complejos, aplica toda la arquitectura.
