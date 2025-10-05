@@ -53,13 +53,13 @@ export const useLoginForm = ({ onSuccess, onError }: UseLoginFormProps = {}) => 
   });
 
   // Auto-submit cuando el componente se monta
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleSubmit();
-    }, 500); // Espera 500ms para que los campos se llenen visualmente
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     handleSubmit();
+  //   }, 500); // Espera 500ms para que los campos se llenen visualmente
 
-    return () => clearTimeout(timer);
-  }, [handleSubmit]);
+  //   return () => clearTimeout(timer);
+  // }, [handleSubmit]);
 
   return {
     ...form,
