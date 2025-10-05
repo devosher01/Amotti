@@ -169,11 +169,11 @@ export const ROUTES = {
  */
 export const COOKIE_CONFIG = {
   AUTH_TOKEN: {
-    name: 'auth_token',
-    maxAge: 15 * 60, // 15 minutos
+    name: 'accessToken',
+    maxAge: 24 * 60 * 60, // 24 horas
   },
   REFRESH_TOKEN: {
-    name: 'rt',
+    name: 'refreshToken',
     maxAge: 7 * 24 * 60 * 60, // 7 días
   },
 } as const;

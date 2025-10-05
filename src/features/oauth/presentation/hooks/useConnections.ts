@@ -1,13 +1,14 @@
 'use client';
 
 import { useConnectionsQuery } from './queries/useConnectionsQuery';
-import { PlatformConnection, DisconnectionResult, ConnectionId } from '../../domain/entities';
+import { DisconnectionResult, ConnectionId, ConnectionsApiResponse } from '../../domain/entities';
 
 export interface UseConnectionsReturn {
-  connections: PlatformConnection[];
+  connections: ConnectionsApiResponse;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  invalidateConnections: () => void;
   deleteConnection: (connectionId: ConnectionId) => Promise<DisconnectionResult>;
 }
 
@@ -33,6 +34,9 @@ export function useConnections(enabled: boolean = true): UseConnectionsReturn {
     error: query.error,
     refetch: async () => {
       await query.refetch();
+    },
+    invalidateConnections: () => {
+      query.invalidateConnections();
     },
     deleteConnection: deleteConnectionWrapper,
   };

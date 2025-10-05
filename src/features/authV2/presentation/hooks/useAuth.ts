@@ -5,6 +5,7 @@ import type { LoginCredentials, RegisterData } from '../../domain/entities';
 export function useAuth() {
   const { data: user, isLoading, error } = useCurrentUserQuery();
   
+  
   return {
     user,
     isLoading,
@@ -19,10 +20,6 @@ export function useLogin() {
   const login = async (credentials: LoginCredentials) => {
     try {
       await loginMutation.mutateAsync(credentials);
-      
-      console.log('✅ [Login] Login exitoso, cookies establecidas por backend');
-      
-      console.log('🏠 [Login] Redirigiendo al dashboard...');
       window.location.replace('/');
       
     } catch (error) {

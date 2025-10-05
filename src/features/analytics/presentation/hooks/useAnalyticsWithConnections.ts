@@ -19,39 +19,39 @@ export function useAnalyticsWithConnections({
 
   // Extraer conexiones activas
   const facebookConnection = useMemo(() => 
-    connections.find(conn => conn.platform === 'facebook' && conn.status === 'active'),
+    connections.facebook?.find((conn) => conn.isActive),
     [connections]
   );
 
   const instagramConnection = useMemo(() => 
-    connections.find(conn => conn.platform === 'instagram' && conn.status === 'active'),
+    connections.instagram?.find((conn) => conn.isActive),
     [connections]
   );
 
   // Queries de Facebook (solo si hay conexión)
   const facebookAnalytics = useFacebookAnalyticsQuery(
-    facebookConnection?.pageInfo?.id || '',
+    facebookConnection?.accountId || '',
     dateRange,
-    !!facebookConnection?.pageInfo?.id && !connectionsLoading
+    !!facebookConnection?.accountId && !connectionsLoading
   );
 
   const facebookPosts = useFacebookPostsQuery(
-    facebookConnection?.pageInfo?.id || '',
+    facebookConnection?.accountId || '',
     postsLimit,
-    !!facebookConnection?.pageInfo?.id && !connectionsLoading
+    !!facebookConnection?.accountId && !connectionsLoading
   );
 
   // Queries de Instagram (solo si hay conexión)
   const instagramAnalytics = useInstagramAnalyticsQuery(
-    instagramConnection?.pageInfo?.id || '',
+    instagramConnection?.accountId || '',
     dateRange,
-    !!instagramConnection?.pageInfo?.id && !connectionsLoading
+    !!instagramConnection?.accountId && !connectionsLoading
   );
 
   const instagramPosts = useInstagramPostsQuery(
-    instagramConnection?.pageInfo?.id || '',
+    instagramConnection?.accountId || '',
     postsLimit,
-    !!instagramConnection?.pageInfo?.id && !connectionsLoading
+    !!instagramConnection?.accountId && !connectionsLoading
   );
 
   return {

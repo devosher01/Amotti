@@ -94,10 +94,10 @@ export function fromSnapshot(data: any): Publication {
     platforms: data.platforms || [],
     platformContentTypes,
     status: data.status,
-    scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : undefined,
-    publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
-    createdAt: new Date(data.createdAt),
-    updatedAt: new Date(data.updatedAt),
+    scheduledAt: data.scheduledAt ? new Date(data.scheduledAt + (data.scheduledAt.endsWith('Z') ? '' : 'Z')) : undefined,
+    publishedAt: data.publishedAt ? new Date(data.publishedAt + (data.publishedAt.endsWith('Z') ? '' : 'Z')) : undefined,
+    createdAt: data.createdAt ? new Date(data.createdAt + (data.createdAt.endsWith('Z') ? '' : 'Z')) : new Date(),
+    updatedAt: data.updatedAt ? new Date(data.updatedAt + (data.updatedAt.endsWith('Z') ? '' : 'Z')) : new Date(),
     errors: data.errors?.length > 0 ? data.errors : (errors.length > 0 ? errors : undefined)
   };
 }

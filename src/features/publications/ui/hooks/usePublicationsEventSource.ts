@@ -29,7 +29,7 @@ export function usePublicationsEventSource(): EventSourceInput {
   const dependencies = usePublicationDependencies();
 
   const eventSource = useMemo((): EventSourceInput => ({
-    id: 'publications-event-source',
+    id: `publications-event-source-${user?.userId || 'anonymous'}`,
     
     events: async (fetchInfo, successCallback, failureCallback) => {
       try {
@@ -59,6 +59,7 @@ export function usePublicationsEventSource(): EventSourceInput {
         };
 
         const result = await listPublicationsUseCase(query, dependencies);
+        console.log('ESTE ES UN DEBUG DE RESULTADO DE LIST PUBLICATIONS', result);
 
         if (result.success && result.data) {
           // Transformar publications → eventos FullCalendar

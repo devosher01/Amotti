@@ -28,7 +28,7 @@ export function useFacebookAnalyticsQuery(accountId: string, dateRange: DateRang
     queryFn: () => analyticsApiAdapter.getFacebookAnalytics(accountId, dateRange.startDate, dateRange.endDate),
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
-    enabled: enabled && !!accountId,
+    enabled: enabled && !!accountId && !!dateRange.startDate && !!dateRange.endDate,
     retry: 1,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -42,7 +42,7 @@ export function useFacebookPostsQuery(accountId: string, limit: number, enabled:
     queryFn: () => analyticsApiAdapter.getFacebookPosts(accountId, limit),
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
-    enabled: enabled && !!accountId,
+    enabled: enabled && !!accountId && limit > 0,
     retry: 1,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -56,7 +56,7 @@ export function useInstagramAnalyticsQuery(accountId: string, dateRange: DateRan
     queryFn: () => analyticsApiAdapter.getInstagramAnalytics(accountId, dateRange.startDate, dateRange.endDate),
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
-    enabled: enabled && !!accountId,
+    enabled: enabled && !!accountId && !!dateRange.startDate && !!dateRange.endDate,
     retry: 1,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -70,7 +70,7 @@ export function useInstagramPostsQuery(accountId: string, limit: number, enabled
     queryFn: () => analyticsApiAdapter.getInstagramPosts(accountId, limit),
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
-    enabled: enabled && !!accountId,
+    enabled: enabled && !!accountId && limit > 0,
     retry: 1,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

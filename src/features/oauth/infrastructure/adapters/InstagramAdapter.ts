@@ -19,37 +19,30 @@ interface InstagramAccountApiResponse {
   id: string;
   username: string;
   name: string;
-  profilePictureUrl: string;
-  followersCount: number;
-}
-
-interface InstagramAccountsApiResponse {
-  success: boolean;
-  instagramAccounts: InstagramAccountApiResponse[];
-  pageInfo: InstagramPageInfo;
-  message?: string;
+  profile_picture_url: string;
 }
 
 export class InstagramAdapter {
   async getAccountsFromFacebook(facebookPageId: string): Promise<{ accounts: InstagramAccount[]; pageInfo: InstagramPageInfo }> {
     try {
-      const data = await httpClient.get<InstagramAccountsApiResponse>(`/facebook/instagram-accounts?facebookPageId=${facebookPageId}`);
+      const data = await httpClient.get<InstagramAccountApiResponse[]>(`/oauth/facebook/instagram-accounts?facebookPageId=${facebookPageId}`);
       
-      if (!data.success) {
-        throw new Error(data.message || 'Error al obtener cuentas de Instagram');
-      }
+      console.log('🔍 Instagram API Response:', data);
 
-      const accounts: InstagramAccount[] = data.instagramAccounts.map((account: InstagramAccountApiResponse) => ({
+      const accounts: InstagramAccount[] = data.map((account: InstagramAccountApiResponse) => ({
         id: account.id,
         username: account.username,
         name: account.name,
-        profilePictureUrl: account.profilePictureUrl,
-        followersCount: account.followersCount,
+        profilePictureUrl: account.profile_picture_url,
+        followersCount: 0, // API no retorna followers count
       }));
 
       return {
         accounts,
-        pageInfo: data.pageInfo,
+        pageInfo: {
+          id: '',
+          name: 'Facebook Page'
+        },
       };
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Error al obtener cuentas de Instagram');
@@ -58,11 +51,15 @@ export class InstagramAdapter {
 
   async connectViaFacebook(facebookPageId: string, instagramAccountId: string): Promise<AuthResult> {
     try {
-      const data = await httpClient.post<AuthResult>('/instagram/connect-via-facebook', {
+      const data = await httpClient.post<{ success: boolean; message: string }>('/oauth/instagram/connect', {
         facebookPageId,
         instagramAccountId,
       });
-      return data;
+      
+      return {
+        success: data.success,
+        message: data.message
+      };
     } catch (error) {
       return {
         success: false,

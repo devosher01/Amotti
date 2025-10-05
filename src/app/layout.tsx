@@ -8,7 +8,7 @@ import { UserProvider } from '@/features/auth/presentation/contexts/UserContext'
 import "./global.css";
 
 export const metadata = {
-  title: "Tactiko360",
+  title: "Amotii",
   description: "Modernize Main kit",
 };
 

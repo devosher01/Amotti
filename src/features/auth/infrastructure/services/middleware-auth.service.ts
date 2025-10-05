@@ -13,10 +13,10 @@ interface RefreshTokenResponse {
 export class MiddlewareAuthService {
   static async validateToken(token: string): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE}/auth/me`, {
+      const response = await fetch(`${API_BASE}/auth/v2/me`, {
         method: 'GET',
         headers: {
-          'Cookie': `auth_token=${token}`,
+          'Cookie': `accessToken=${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -29,11 +29,11 @@ export class MiddlewareAuthService {
 
   static async refreshTokens(refreshToken: string): Promise<RefreshTokenResponse> {
     try {
-      const response = await fetch(`${API_BASE}/auth/refresh`, {
+      const response = await fetch(`${API_BASE}/auth/v2/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cookie': `rt=${refreshToken}`,
+          'Cookie': `refreshToken=${refreshToken}`,
         },
         body: JSON.stringify({}),
       });

@@ -16,26 +16,41 @@ export type ExternalAccount = {
   metadata?: Record<string, any>;
 };
 
-export type PlatformConnection = {
+// Base connection interface that matches your API response
+export interface BaseConnection {
   id: string;
   platform: string;
-  status: ConnectionStatus;
-  tokenInfo: {
-    expiresAt?: string;
-    timeRemaining: string;
-    needsRefresh: boolean;
-  };
+  connectionType: string;
+  accountId: string;
+  accountName: string;
+  profilePictureUrl: string;
+  isActive: boolean;
   createdAt: string;
-  updatedAt: string;
-  pageInfo: {
-    id: string;
-    name: string;
-    category: string;
-    profilePictureUrl?: string;
-    followersCount?: number;
-    verified: boolean;
-  };
-};
+  lastVerifiedAt: string;
+}
+
+// Facebook specific connection
+export interface FacebookConnection extends BaseConnection {
+  platform: "facebook";
+  connectionType: "facebook_page";
+}
+
+// Instagram specific connection  
+export interface InstagramConnection extends BaseConnection {
+  platform: "instagram";
+  connectionType: "instagram_business";
+  accountUsername: string;
+}
+
+// Union type for all platform connections
+export type PlatformConnection = FacebookConnection | InstagramConnection;
+
+// API response structure that matches your real response
+export interface ConnectionsApiResponse {
+  total: number;
+  facebook: FacebookConnection[];
+  instagram: InstagramConnection[];
+}
 
 export type AuthResult = {
   success: boolean;
@@ -52,15 +67,6 @@ export type AuthenticationUrl = {
   state: string;
 };
 
-export type ConnectionsData = {
-  connections: PlatformConnection[];
-  total: number;
-  stats: {
-    active: number;
-    expired: number;
-    platforms: string[];
-  };
-};
 
 export type LinkedAccount = {
   id: string;
@@ -80,7 +86,7 @@ export type DisconnectionResult = {
   };
 };
 
-// Pure domain types
+// Pure domain types - Legacy, now using isActive boolean in new structure
 export type ConnectionStatus = 'active' | 'expired' | 'error';
 export type PlatformType = string; 
 export type DateTimeString = string;

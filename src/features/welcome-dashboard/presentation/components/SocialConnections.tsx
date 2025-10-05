@@ -9,24 +9,32 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { socialPlatforms } from "../constants/data";
 import { FacebookDisconnectWarningModal } from "../../../oauth/presentation/components/FacebookDisconnectWarningModal";
+import { SimpleDisconnectModal } from "../../../oauth/presentation/components/SimpleDisconnectModal";
 import { SocialPlatformCard } from "../../../oauth/presentation/components/SocialPlatformCard";
-import { PlatformConnection } from "../../../oauth/domain/entities";
+import { PlatformConnection, ConnectionsApiResponse } from "../../../oauth/domain/entities";
 
 interface SocialConnectionsProps {
   onConnectPlatform: (platform: string) => void;
-  connections: PlatformConnection[];
+  connections: ConnectionsApiResponse;
   isLoading: boolean;
   onDeleteConnection: (connectionId: string) => Promise<any>;
 }
 
 export const SocialConnections: React.FC<SocialConnectionsProps> = ({
   onConnectPlatform,
-  connections = [],
+  connections = { total: 0, facebook: [], instagram: [] },
   isLoading = false,
   onDeleteConnection,
 }) => {
   const theme = useTheme();
-  const hasInstagramConnection = connections?.some(conn => conn.platform === 'instagram' && conn.status === 'active') || false;
+  
+  // Convert ConnectionsApiResponse to flat array for easier checking
+  const allConnections = React.useMemo(() => [
+    ...(connections.facebook || []),
+    ...(connections.instagram || [])
+  ], [connections]);
+  
+  const hasInstagramConnection = allConnections.some(conn => conn.platform === 'instagram' && conn.isActive) || false;
 
 
   const [disconnectModal, setDisconnectModal] = React.useState<{
@@ -41,9 +49,19 @@ export const SocialConnections: React.FC<SocialConnectionsProps> = ({
     platform: ''
   });
 
+  const [simpleDisconnectModal, setSimpleDisconnectModal] = React.useState<{
+    open: boolean;
+    connectionId: string;
+    platformName: string;
+  }>({
+    open: false,
+    connectionId: '',
+    platformName: ''
+  });
+
 
   const handleDisconnect = (connectionId: string, platformName: string, platform: string) => {
-    if (platform === 'facebook' || platform === 'instagram') {
+    if (platform === 'facebook' && hasInstagramConnection) {
       setDisconnectModal({
         open: true,
         connectionId,
@@ -51,9 +69,11 @@ export const SocialConnections: React.FC<SocialConnectionsProps> = ({
         platform
       });
     } else {
-      if (window.confirm(`¿Estás seguro de que quieres desconectar ${platformName}?`)) {
-        performDisconnect(connectionId);
-      }
+      setSimpleDisconnectModal({
+        open: true,
+        connectionId,
+        platformName
+      });
     }
   };
 
@@ -72,6 +92,15 @@ export const SocialConnections: React.FC<SocialConnectionsProps> = ({
 
   const handleCancelDisconnect = () => {
     setDisconnectModal({ open: false, connectionId: '', platformName: '', platform: '' });
+  };
+
+  const handleConfirmSimpleDisconnect = async () => {
+    await performDisconnect(simpleDisconnectModal.connectionId);
+    setSimpleDisconnectModal({ open: false, connectionId: '', platformName: '' });
+  };
+
+  const handleCancelSimpleDisconnect = () => {
+    setSimpleDisconnectModal({ open: false, connectionId: '', platformName: '' });
   };
 
 
@@ -108,7 +137,7 @@ export const SocialConnections: React.FC<SocialConnectionsProps> = ({
               textAlign: "center",
             }}
           >
-            {connections.length > 0 ? 'Tus Redes Sociales' : 'Conecta tus Redes Sociales'}
+            {allConnections.length > 0 ? 'Tus Redes Sociales' : 'Conecta tus Redes Sociales'}
           </Typography>
           <Typography
             variant="h6"
@@ -116,8 +145,8 @@ export const SocialConnections: React.FC<SocialConnectionsProps> = ({
             textAlign="center"
             sx={{ maxWidth: "600px" }}
           >
-            {connections.length > 0 
-              ? `Tienes ${connections.length} ${connections.length === 1 ? 'red social conectada' : 'redes sociales conectadas'}. ¡Sigue conectando más para ampliar tu alcance!`
+            {allConnections.length > 0 
+              ? `Tienes ${allConnections.length} ${allConnections.length === 1 ? 'red social conectada' : 'redes sociales conectadas'}. ¡Sigue conectando más para ampliar tu alcance!`
               : '🚀 Haz clic en cualquier plataforma para conectar y comenzar a gestionar tu presencia digital desde un solo lugar.'
             }
           </Typography>
@@ -128,7 +157,7 @@ export const SocialConnections: React.FC<SocialConnectionsProps> = ({
         {socialPlatforms
           .filter((platform) => platform.enabled) // Solo mostrar plataformas habilitadas
           .map((platform) => {
-            const platformConnection = connections?.find(conn => conn.platform === platform.key);
+            const platformConnection = allConnections.find((conn: PlatformConnection) => conn.platform === platform.key);
             
             return (
               <SocialPlatformCard
@@ -147,8 +176,14 @@ export const SocialConnections: React.FC<SocialConnectionsProps> = ({
         open={disconnectModal.open}
         onClose={handleCancelDisconnect}
         onConfirm={handleConfirmDisconnect}
-        hasInstagram={hasInstagramConnection}
         platformName={disconnectModal.platformName}
+      />
+
+      <SimpleDisconnectModal
+        open={simpleDisconnectModal.open}
+        onClose={handleCancelSimpleDisconnect}
+        onConfirm={handleConfirmSimpleDisconnect}
+        platformName={simpleDisconnectModal.platformName}
       />
 
     </Box>

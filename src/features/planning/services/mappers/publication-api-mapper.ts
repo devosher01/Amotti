@@ -39,6 +39,11 @@ export function mapApiResponseToPublication(apiData: ApiPublicationData): Public
 }
 
 
+function getContentTypeFromPlatforms(platformContentTypes: Record<string, string>): string {
+  const contentTypes = Object.values(platformContentTypes);
+  return contentTypes[0] || 'post';
+}
+
 export function mapCreateCommandToJsonRequest(command: CreatePublicationCommand): any {
   const contentData = command.content;
 
@@ -51,13 +56,13 @@ export function mapCreateCommandToJsonRequest(command: CreatePublicationCommand)
   });
 
   const result = {
-    content: {
-      text: contentData.text || '',
-      media: contentData.media?.map(item => ({
-        type: item.type,
-        url: item.url
-      })) || []
-    },
+    text: contentData.text || '',
+    media: contentData.media?.map(item => ({
+      type: item.type,
+      url: item.url
+    })) || [],
+    hashtags: contentData.hashtags || [],
+    contentType: getContentTypeFromPlatforms(command.platformContentTypes),
     platforms: command.platforms,
     platformContentTypes: command.platformContentTypes || {},
     action: command.action,

@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { useUploadAsset } from './useUploadAsset';
-import { usePublicationDependencies } from '../../shared/hooks/usePublicationDependencies';
+import { Asset } from '../../../assets/domain/entities';
 
 export interface ProcessedMediaItem {
   type: 'image' | 'video';
@@ -20,17 +20,15 @@ export interface AssetProcessorResult {
   error?: string;
 }
 
-function isAssetReady(asset: any): boolean {
-  return asset &&
-    asset.status === 'completed' &&
+function isAssetReady(asset: Asset): boolean {
+  return asset.status === 'completed' &&
     asset.urls &&
-    (asset.urls.original?.trim() || asset.urls.optimized?.trim());
+    Boolean(asset.urls.original?.trim() || asset.urls.optimized?.trim());
 }
 
 
 export function useAssetProcessor() {
   const { uploadAsset } = useUploadAsset();
-  const dependencies = usePublicationDependencies();
 
   const processAssets = useCallback(async (input: AssetProcessorInput): Promise<AssetProcessorResult> => {
     const mediaUrls: ProcessedMediaItem[] = [];
@@ -49,7 +47,9 @@ export function useAssetProcessor() {
           tags: ['publication', assetType]
         });
 
-        if (!uploadResult.success || !uploadResult.assetId) {
+        console.log('🔍 Upload result:', uploadResult);
+
+        if (!uploadResult.success || !uploadResult.asset) {
           const errorMsg = `Failed to upload ${file.name}: ${uploadResult.message || 'Unknown upload error'}`;
           console.error('❌ Upload failed:', { file: file.name, result: uploadResult });
           return {
@@ -59,7 +59,7 @@ export function useAssetProcessor() {
           };
         }
 
-        const processedAsset = await waitForAssetProcessing(uploadResult.assetId, file.name, dependencies);
+        const processedAsset = await waitForAssetProcessing(uploadResult.asset.id, file.name);
 
         if (!processedAsset.success) {
           return {
@@ -69,11 +69,11 @@ export function useAssetProcessor() {
           };
         }
 
-        const finalUrl = processedAsset.asset.urls.optimized?.trim() || processedAsset.asset.urls.original?.trim();
+        const finalUrl = processedAsset.asset?.urls.optimized?.trim() || processedAsset.asset?.urls.original?.trim();
 
         if (!finalUrl) {
           const errorMsg = `Asset ${file.name} failed to generate URLs after processing`;
-          console.error('❌ Empty URL for asset:', processedAsset.asset);
+          console.error('❌ Empty URL for asset:', processedAsset.asset || 'Asset undefined');
           return {
             success: false,
             mediaUrls: [],
@@ -102,59 +102,66 @@ export function useAssetProcessor() {
         error: errorMsg
       };
     }
-  }, [uploadAsset, dependencies]);
+  }, [uploadAsset]);
 
   return { processAssets };
 }
 
 async function waitForAssetProcessing(
   assetId: string,
-  fileName: string,
-  dependencies: any
-): Promise<{ success: boolean; asset?: any; error?: string }> {
-  let retryCount = 0;
-  const maxRetries = 10;
-  const retryDelay = 3000;
-
-  while (retryCount < maxRetries) {
+  _fileName: string
+): Promise<{ success: boolean; asset?: Asset; error?: string }> {
+  const maxAttempts = 15;
+  const interval = 1000; // 1 segundo
+  
+  console.log(`🔄 Esperando asset ${assetId}...`);
+  
+  for (let i = 0; i < maxAttempts; i++) {
     try {
-      const asset = await dependencies.assetRepository.getById({ id: assetId });
-
-      console.log(`📋 Attempt ${retryCount + 1}/${maxRetries} - Asset status: ${asset.status}`, {
-        id: asset.id,
-        status: asset.status,
-        hasOriginalUrl: !!asset.urls?.original?.trim(),
-        hasOptimizedUrl: !!asset.urls?.optimized?.trim()
+      const response = await fetch(`/api/assets/${assetId}`, {
+        credentials: 'include'
       });
-
-      if (isAssetReady(asset)) {
-        return { success: true, asset };
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
-
-      if (retryCount < maxRetries - 1) {
-        const remainingTime = (maxRetries - retryCount - 1) * retryDelay / 1000;
-        console.log(`⏳ Asset still processing (${asset.status}) - waiting ${retryDelay / 1000}s... (${remainingTime}s remaining)`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-      }
-
-      retryCount++;
-    } catch (error) {
-      console.error(`❌ Error getting asset ${assetId} (attempt ${retryCount + 1}):`, error);
-      retryCount++;
-
-      if (retryCount >= maxRetries) {
+      
+      const asset = await response.json();
+      console.log(`📊 Intento ${i + 1}: Estado = ${asset.status}`);
+      
+      if (asset.status === 'completed') {
+        console.log('✅ Asset listo!', asset.urls);
+        return {
+          success: true,
+          asset: asset
+        };
+      } else if (asset.status === 'failed') {
+        console.log('❌ Asset falló:', asset.metadata?.error);
         return {
           success: false,
-          error: `Failed to get asset info for ${fileName} after ${maxRetries} attempts. Last error: ${error}`
+          error: 'Asset processing failed'
         };
       }
-
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      
+      // Esperar antes del siguiente intento
+      await new Promise(resolve => setTimeout(resolve, interval));
+      
+    } catch (error) {
+      console.error(`❌ Error en intento ${i + 1}:`, error instanceof Error ? error.message : error);
+      
+      if (i === maxAttempts - 1) {
+        return {
+          success: false,
+          error: 'Network error'
+        };
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, interval));
     }
   }
-
+  
   return {
     success: false,
-    error: `Asset ${fileName} processing timeout after ${maxRetries} attempts`
+    error: `Timeout - No se completó en ${maxAttempts} segundos`
   };
 }

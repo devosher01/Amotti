@@ -123,7 +123,16 @@ export const AccountSelectionModal: React.FC<AccountSelectionModalProps> = ({
                           )}
                         </Box>
                       }
-                      secondary={account.category || account.id}
+                      secondary={
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {account.category}
+                          </Typography>
+                          <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
+                            ID: {account.id}
+                          </Typography>
+                        </Box>
+                      }
                       sx={{
                         '& .MuiListItemText-primary': {
                           fontWeight: selectedAccountId === account.id ? 600 : 400,

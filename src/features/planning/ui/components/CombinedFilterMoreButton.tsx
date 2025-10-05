@@ -41,6 +41,9 @@ import {
   EditNote as DraftIcon,
   Error as ErrorIcon,
   AutoAwesome as AutoListIcon,
+  Close as CancelIcon,
+  Sync as ProcessingIcon,
+  CheckCircleOutline as PartialSuccessIcon,
   // Notes Icons
   Description as DocumentIcon,
   Visibility as ReadIcon,
@@ -77,11 +80,13 @@ const SOCIAL_PLATFORMS = [
 
 // Publication Status Options
 const PUBLICATION_STATUS = [
-    { id: 'published', label: 'Publicado / Enviado', icon: <PublishedIcon />, color: 'rgb(82, 199, 159)' },
-    { id: 'pending', label: 'Pendiente', icon: <PendingIcon />, color: 'rgb(104, 143, 164)' },
-    { id: 'draft', label: 'Borrador', icon: <DraftIcon />, color: 'rgb(72, 76, 79)' },
-    { id: 'error', label: 'Con errores', icon: <ErrorIcon />, color: 'rgb(234, 39, 39)' },
-    { id: 'autolist', label: 'Desde autolista', icon: <AutoListIcon />, color: 'rgb(114, 201, 218)' }
+    { id: 'draft', label: 'Borrador', icon: <DraftIcon />, color: 'rgb(158, 158, 158)' },
+    { id: 'scheduled', label: 'Programada', icon: <PendingIcon />, color: 'rgb(33, 150, 243)' },
+    { id: 'processing', label: 'Procesando', icon: <ProcessingIcon />, color: 'rgb(255, 152, 0)' },
+    { id: 'published', label: 'Publicada', icon: <PublishedIcon />, color: 'rgb(76, 175, 80)' },
+    { id: 'failed', label: 'Falló', icon: <ErrorIcon />, color: 'rgb(244, 67, 54)' },
+    { id: 'partial_success', label: 'Éxito parcial', icon: <PartialSuccessIcon />, color: 'rgb(255, 109, 0)' },
+    { id: 'cancelled', label: 'Cancelada', icon: <CancelIcon />, color: 'rgb(117, 117, 117)' }
 ];
 
 // Notes Options

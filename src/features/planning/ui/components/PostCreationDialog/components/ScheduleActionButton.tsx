@@ -22,9 +22,7 @@ import {
   IconChevronDown,
   IconClock,
   IconEdit,
-  IconBookmark,
   IconSend,
-  IconEye,
 } from "@tabler/icons-react";
 
 interface ScheduleOption {
@@ -57,20 +55,6 @@ const CREATE_OPTIONS: ScheduleOption[] = [
     description: 'Guarda y publica en otro momento',
     icon: <IconEdit size={16} />,
     action: 'draft'
-  },
-  {
-    id: 'library',
-    label: 'Guardar en la biblioteca',
-    description: 'Guarda este post en la biblioteca de publicaciones',
-    icon: <IconBookmark size={16} />,
-    action: 'library'
-  },
-  {
-    id: 'review',
-    label: 'Enviar a revisión',
-    description: 'Selecciona usuarios revisores',
-    icon: <IconEye size={16} />,
-    action: 'review'
   },
   {
     id: 'publish',
@@ -125,7 +109,7 @@ export const ScheduleActionButton: React.FC<ScheduleActionButtonProps> = ({
   const handleMenuItemClick = (option: ScheduleOption) => {
     setSelectedOption(option);
     setOpen(false);
-    onAction(option.action, formData);
+    // Solo selecciona la opción, NO la ejecuta
   };
 
   const handleToggle = () => {
@@ -148,10 +132,6 @@ export const ScheduleActionButton: React.FC<ScheduleActionButtonProps> = ({
         sx={{
           '& .MuiButton-root': {
             textTransform: 'none',
-            background: 'linear-gradient(135deg, #5b24b7 0%, #4057d9 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #4a1e9a 0%, #3a4bc7 100%)',
-            },
             '&:disabled': {
               background: theme.palette.action.disabledBackground,
               color: theme.palette.action.disabled,
@@ -176,7 +156,8 @@ export const ScheduleActionButton: React.FC<ScheduleActionButtonProps> = ({
           sx={{ 
             px: 1,
             minWidth: 'auto',
-            borderLeft: '1px solid rgba(255,255,255,0.2)',
+            borderLeft: `1px solid ${theme.palette.primary.contrastText}`,
+            opacity: 0.7,
           }}
         >
           <IconChevronDown size={16} />
@@ -220,9 +201,9 @@ export const ScheduleActionButton: React.FC<ScheduleActionButtonProps> = ({
                           py: 1.5,
                           px: 2,
                           '&.Mui-selected': {
-                            bgcolor: 'rgba(91, 36, 183, 0.1)',
+                            bgcolor: `${theme.palette.primary.main}15`,
                             '&:hover': {
-                              bgcolor: 'rgba(91, 36, 183, 0.15)',
+                              bgcolor: `${theme.palette.primary.main}25`,
                             }
                           },
                           '&:hover': {

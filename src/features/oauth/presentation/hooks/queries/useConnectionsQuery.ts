@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { oauthQueryKeys } from '@/lib/query/queryKeys';
 import { ConnectionsAdapter } from '../../../infrastructure/adapters/ConnectionsAdapter';
-import { PlatformConnection, ConnectionId } from '../../../domain/entities';
+import { PlatformConnection, ConnectionId, ConnectionsApiResponse } from '../../../domain/entities';
 import { useUser } from '@/features/auth/presentation/contexts/UserContext';
 
 export function useConnectionsQuery(enabled?: boolean) {
@@ -16,7 +16,14 @@ export function useConnectionsQuery(enabled?: boolean) {
 
   const connectionsQuery = useQuery({
     queryKey: oauthQueryKeys.connections(),
-    queryFn: () => adapter.getConnections(),
+    queryFn: async () => {
+      try {
+        const result = await adapter.getConnections();
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
     staleTime: 5 * 60 * 1000, // 5 minutos - las conexiones no cambian frecuentemente
     gcTime: 10 * 60 * 1000, // 10 minutos en cache
     retry: 2,
@@ -36,10 +43,15 @@ export function useConnectionsQuery(enabled?: boolean) {
   });
 
   return {
-    connections: connectionsQuery.data || [] as PlatformConnection[],
+    connections: connectionsQuery.data || { total: 0, facebook: [], instagram: [] } as ConnectionsApiResponse,
     isLoading: connectionsQuery.isLoading,
     error: connectionsQuery.error?.message || null,
     refetch: connectionsQuery.refetch,
+    invalidateConnections: () => {
+      queryClient.invalidateQueries({
+        queryKey: oauthQueryKeys.connections()
+      });
+    },
     deleteConnection: deleteConnectionMutation.mutate,
     isDeleting: deleteConnectionMutation.isPending,
   };

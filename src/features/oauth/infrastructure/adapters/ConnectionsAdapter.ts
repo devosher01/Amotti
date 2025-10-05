@@ -1,17 +1,30 @@
 
 import { httpClient } from '@/lib/http-client';
-import { PlatformConnection, DisconnectionResult, ConnectionId } from '../../domain/entities';
-
-interface ConnectionsApiResponse {
-  success: boolean;
-  data: { connections: PlatformConnection[] };
-}
+import { PlatformConnection, DisconnectionResult, ConnectionId, ConnectionsApiResponse } from '../../domain/entities';
 
 export class ConnectionsAdapter {
-  async getConnections(): Promise<PlatformConnection[]> {
+  // Main method that returns the full API response structure
+  async getConnections(): Promise<ConnectionsApiResponse> {
     try {
-      const result = await httpClient.get<ConnectionsApiResponse>('/social-connections');
-      return result.data?.connections || [];
+      const result = await httpClient.get<ConnectionsApiResponse>('/connections');
+      return result;
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Error al cargar conexiones');
+    }
+  }
+
+  // Helper method if you need a flat array of connections
+  async getConnectionsFlat(): Promise<PlatformConnection[]> {
+    try {
+      const result = await this.getConnections();
+      
+      // Transform the grouped response into a flat array
+      const connections: PlatformConnection[] = [
+        ...result.facebook || [],
+        ...result.instagram || []
+      ];
+      
+      return connections;
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Error al cargar conexiones');
     }
@@ -19,7 +32,7 @@ export class ConnectionsAdapter {
 
   async deleteConnection(connectionId: ConnectionId): Promise<DisconnectionResult> {
     try {
-      const result = await httpClient.delete<DisconnectionResult>(`/social-connections/${connectionId}`);
+      const result = await httpClient.delete<DisconnectionResult>(`/connections/${connectionId}`);
       return result;
     } catch (error) {
       return {

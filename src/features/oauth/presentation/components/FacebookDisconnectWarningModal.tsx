@@ -18,7 +18,6 @@ interface FacebookDisconnectWarningModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  hasInstagram: boolean;
   platformName: string;
 }
 
@@ -26,7 +25,6 @@ export function FacebookDisconnectWarningModal({
   open,
   onClose,
   onConfirm,
-  hasInstagram,
   platformName
 }: FacebookDisconnectWarningModalProps) {
   return (
@@ -64,78 +62,69 @@ export function FacebookDisconnectWarningModal({
       </DialogTitle>
       
       <DialogContent>
-        {hasInstagram ? (
-          <>
-            <Alert 
-              severity="warning" 
-              sx={{ 
-                mb: 3,
-                backgroundColor: alpha('#ff6b35', 0.1),
-                border: `1px solid ${alpha('#ff6b35', 0.2)}`,
-                '& .MuiAlert-icon': {
-                  color: '#ff6b35'
-                }
-              }}
-            >
-              <AlertTitle sx={{ fontWeight: 700, color: '#262626' }}>
-                Instagram vinculado será desconectado
-              </AlertTitle>
-              Tu conexión de Instagram está vinculada con Facebook. Al desconectar Facebook 
-              desconectaremos automáticamente Instagram en esta marca.
-            </Alert>
+        <Alert 
+          severity="warning" 
+          sx={{ 
+            mb: 3,
+            backgroundColor: alpha('#ff6b35', 0.1),
+            border: `1px solid ${alpha('#ff6b35', 0.2)}`,
+            '& .MuiAlert-icon': {
+              color: '#ff6b35'
+            }
+          }}
+        >
+          <AlertTitle sx={{ fontWeight: 700, color: '#262626' }}>
+            Instagram vinculado será desconectado
+          </AlertTitle>
+          Tu conexión de Instagram está vinculada con Facebook. Al desconectar Facebook 
+          desconectaremos automáticamente Instagram en esta marca.
+        </Alert>
 
-            <Box sx={{ p: 3, backgroundColor: alpha('#f7f7f7', 0.5), borderRadius: '12px', mb: 2 }}>
-              <Typography variant="body1" fontWeight={600} color="#262626" sx={{ mb: 2 }}>
-                Cuentas que se desconectarán:
-              </Typography>
-              
-              <Stack spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      backgroundColor: '#1877F2',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <IconBrandFacebook size={18} color="white" />
-                  </Box>
-                  <Typography variant="body1" color="#262626">
-                    {platformName}
-                  </Typography>
-                </Stack>
-                
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      background: 'linear-gradient(135deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <IconBrandInstagram size={18} color="white" />
-                  </Box>
-                  <Typography variant="body1" color="#262626">
-                    Instagram (vinculado)
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Box>
-          </>
-        ) : (
-          <Typography variant="body1" color="#666666" sx={{ mb: 2 }}>
-            ¿Estás seguro de que quieres desconectar {platformName}? 
-            Perderás acceso a todas las funcionalidades relacionadas con esta plataforma.
+        <Box sx={{ p: 3, backgroundColor: alpha('#f7f7f7', 0.5), borderRadius: '12px', mb: 2 }}>
+          <Typography variant="body1" fontWeight={600} color="#262626" sx={{ mb: 2 }}>
+            Cuentas que se desconectarán:
           </Typography>
-        )}
+          
+          <Stack spacing={2}>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  backgroundColor: '#1877F2',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <IconBrandFacebook size={18} color="white" />
+              </Box>
+              <Typography variant="body1" color="#262626">
+                {platformName}
+              </Typography>
+            </Stack>
+            
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  background: 'linear-gradient(135deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <IconBrandInstagram size={18} color="white" />
+              </Box>
+              <Typography variant="body1" color="#262626">
+                Instagram (vinculado)
+              </Typography>
+            </Stack>
+          </Stack>
+        </Box>
         
         <Typography variant="body2" color="#8e8e8e" sx={{ mt: 2 }}>
           Puedes volver a conectar estas cuentas en cualquier momento.
@@ -179,7 +168,7 @@ export function FacebookDisconnectWarningModal({
             },
           }}
         >
-          {hasInstagram ? 'Sí, desconectar ambas' : 'Sí, desconectar'}
+          Sí, desconectar ambas
         </Button>
       </DialogActions>
     </Dialog>

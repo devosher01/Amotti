@@ -58,3 +58,17 @@ export interface DateRange {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
 }
+
+// API Response types (raw from backend)
+export interface AnalyticsApiResponse {
+  metrics: AnalyticsMetric[];
+  availableConnections: {
+    platform: Platform;
+    accountId: string;
+    isActive: boolean;
+  }[];
+}
+
+export interface PostsApiResponse<T> {
+  posts: T[];
+}

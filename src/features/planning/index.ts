@@ -41,5 +41,3 @@ export type {
 
 // Services exports (for advanced usage)
 export { createPublicationApiAdapter } from './services/adapters/publication-api-adapter';
-export { createAssetApiAdapter } from './services/adapters/asset-api-adapter';
-export { usePublicationDependencies } from './shared/hooks/usePublicationDependencies';

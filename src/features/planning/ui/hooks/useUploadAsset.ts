@@ -1,15 +1,25 @@
-import { useState, useCallback } from 'react';
-import { uploadAssetUseCase, UploadAssetResult } from '../../application/use-cases/upload-asset.use-case';
-import { UploadAssetCommand } from '../../application/ports/asset-repository.port';
-import { usePublicationDependencies } from '../../shared/hooks/usePublicationDependencies';
-import { createAssetApiAdapter } from '../../services/adapters/asset-api-adapter';
-import { httpClient } from '../../../../lib/http-client';
+import { useCallback } from 'react';
+import { useAssets } from '../../../assets';
 import { AssetType } from '../../domain/entities/asset';
 
 export interface UploadAssetInput {
   file: File;
   type: AssetType;
   tags?: string[];
+  aspectRatio?: string;
+  width?: number;
+  height?: number;
+  crop?: 'fill' | 'fit' | 'crop' | 'scale' | 'pad';
+  gravity?: 'center' | 'face' | 'auto';
+  bitRate?: string;
+  quality?: number;
+}
+
+export interface UploadAssetResult {
+  success: boolean;
+  message: string;
+  asset?: any;
+  errors?: string[];
 }
 
 export interface UseUploadAssetReturn {
@@ -20,51 +30,48 @@ export interface UseUploadAssetReturn {
 }
 
 export function useUploadAsset(): UseUploadAssetReturn {
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const dependencies = {
-    assetRepository: createAssetApiAdapter(httpClient)
-  };
+  const { uploadAsset: uploadAssetNew, isLoading, error, clearError } = useAssets();
 
   const uploadAsset = useCallback(async (input: UploadAssetInput): Promise<UploadAssetResult> => {
-    setIsUploading(true);
-    setError(null);
-
     try {
-      const command: UploadAssetCommand = {
-        file: input.file,
-        type: input.type,
-        tags: input.tags
-      };
-
-      const result = await uploadAssetUseCase(command, dependencies);
+      // Valores por defecto inteligentes basados en el tipo
+      const isVideo = input.type === 'video';
       
-      if (!result.success) {
-        setError(result.message);
-      }
+      const defaultAspectRatio = input.aspectRatio || (isVideo ? '9:16' : '1:1');
+      const defaultWidth = input.width || 1080;
+      const defaultHeight = input.height || (defaultAspectRatio === '9:16' ? 1920 : 1080);
+      
+      const result = await uploadAssetNew({
+        file: input.file,
+        type: input.type as 'image' | 'video',
+        tags: input.tags || [],
+        aspectRatio: defaultAspectRatio,
+        width: defaultWidth,
+        height: defaultHeight,
+        crop: input.crop || 'fill',
+        gravity: input.gravity || 'center',
+        bitRate: input.bitRate || (isVideo ? '1000k' : undefined),
+        quality: input.quality || 80
+      });
 
-      return result;
+      return {
+        success: result.success,
+        message: result.success ? 'Asset subido exitosamente' : (result.error || 'Error al subir asset'),
+        asset: result.asset,
+        errors: result.error ? [result.error] : undefined
+      };
     } catch (err) {
-      const errorResult = {
+      return {
         success: false,
         message: 'Error inesperado al subir asset',
         errors: [err instanceof Error ? err.message : 'Unknown error']
       };
-      setError(errorResult.message);
-      return errorResult;
-    } finally {
-      setIsUploading(false);
     }
-  }, [dependencies]);
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  }, [uploadAssetNew]);
 
   return {
     uploadAsset,
-    isUploading,
+    isUploading: isLoading,
     error,
     clearError
   };

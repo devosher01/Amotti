@@ -7,11 +7,10 @@ import {
   Typography,
   Box,
   CircularProgress,
-  Alert,
   Avatar,
   Stack,
 } from '@mui/material';
-import { IconBrandInstagram, IconBrandFacebook } from '@tabler/icons-react';
+import { IconBrandInstagram, IconBrandFacebook, IconRefresh, IconAlertTriangle } from '@tabler/icons-react';
 // Removed old OAuth system imports
 
 interface InstagramAccountSelectionModalProps {
@@ -46,10 +45,10 @@ export const InstagramAccountSelectionModal: React.FC<InstagramAccountSelectionM
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
@@ -60,24 +59,30 @@ export const InstagramAccountSelectionModal: React.FC<InstagramAccountSelectionM
     >
       <DialogContent sx={{ p: 4 }}>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Typography variant="h6" component="div" fontWeight={600} sx={{ mb: 1 }}>
-            Cuentas de Instagram con páginas de Facebook vinculadas a este perfil:
+          <Typography variant="h6" component="div" fontWeight={600} sx={{ mb: 3 }}>
+            Selecciona la cuenta de Instagram asociada a tu página de Facebook
           </Typography>
-          
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mb: 3 }}>
-            <Avatar sx={{ width: 24, height: 24, bgcolor: '#1877f2' }}>
-              <IconBrandFacebook size={16} />
-            </Avatar>
-            <Typography variant="body2" fontWeight={500}>
-              Tactiko Tactiko
-            </Typography>
-          </Stack>
         </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              p: 2,
+              mb: 3,
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'error.main',
+            }}
+          >
+            <IconAlertTriangle size={20} color="#d32f2f" />
+            <Typography variant="body2" color="text.primary" sx={{ flex: 1 }}>
+              {error}
+            </Typography>
+          </Box>
         )}
 
         {isLoading ? (
@@ -93,9 +98,9 @@ export const InstagramAccountSelectionModal: React.FC<InstagramAccountSelectionM
             ) : (
               <Stack spacing={2}>
                 {accounts.map((account) => (
-                  <Box 
+                  <Box
                     key={account.id}
-                    sx={{ 
+                    sx={{
                       border: '1px solid',
                       borderColor: 'divider',
                       borderRadius: 2,
@@ -109,11 +114,11 @@ export const InstagramAccountSelectionModal: React.FC<InstagramAccountSelectionM
                   >
                     <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
                       <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar 
+                        <Avatar
                           src={account.profilePictureUrl || undefined}
-                          sx={{ 
-                            width: 40, 
-                            height: 40, 
+                          sx={{
+                            width: 40,
+                            height: 40,
                             bgcolor: '#E4405F',
                             border: '1px solid #ddd'
                           }}
@@ -134,15 +139,15 @@ export const InstagramAccountSelectionModal: React.FC<InstagramAccountSelectionM
                             <IconBrandFacebook size={10} />
                           </Avatar>
                           <Typography variant="body2" color="text.secondary">
-                            Tactiko
+                            {account.facebookPageName || 'Página de Facebook'}
                           </Typography>
                         </Stack>
                       </Stack>
-                      
+
                       <Button
                         variant="contained"
                         size="small"
-                        sx={{ 
+                        sx={{
                           bgcolor: '#333',
                           '&:hover': { bgcolor: '#555' },
                           minWidth: 100
@@ -168,13 +173,13 @@ export const InstagramAccountSelectionModal: React.FC<InstagramAccountSelectionM
           Ayuda
         </Button>
         <Stack direction="row" spacing={2}>
-          <Button onClick={onClose}>
+          {/* <Button onClick={onClose}>
             Buscar otra cuenta
-          </Button>
-          <Button 
-            variant="contained" 
+          </Button> */}
+          <Button
+            variant="contained"
             sx={{ bgcolor: '#333', '&:hover': { bgcolor: '#555' } }}
-            startIcon="🔄"
+            startIcon={<IconRefresh size={16} />}
           >
             Refrescar
           </Button>

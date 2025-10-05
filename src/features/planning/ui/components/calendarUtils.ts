@@ -8,7 +8,7 @@ import { CalendarEventInput } from '../../infrastructure/mappers/publication-cal
 export type { CalendarEventInput };
 
 // Tipos compartidos
-export type PublicationStatus = 'PUBLISHED' | 'SCHEDULED' | 'DRAFT' | 'ERROR' | 'FAILED' | 'PARTIAL_SUCCESS' | 'FROM_AUTOLIST';
+export type PublicationStatus = 'PUBLISHED' | 'SCHEDULED' | 'PROCESSING' | 'DRAFT' | 'ERROR' | 'FAILED' | 'PARTIAL_SUCCESS' | 'CANCELLED' | 'FROM_AUTOLIST';
 export type ContentType = 'post' | 'reel' | 'story';
 export type Platform = 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'tiktok' | 'youtube';
 
@@ -16,10 +16,12 @@ export type Platform = 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'tikt
 export const STATUS_COLORS: Record<PublicationStatus, string> = {
   PUBLISHED: 'rgb(82, 199, 159)',
   SCHEDULED: 'rgb(104, 143, 164)',
+  PROCESSING: 'rgb(255, 152, 0)',
   DRAFT: 'rgb(72, 76, 79)',
   FAILED: 'rgb(234, 39, 39)',
   ERROR: 'rgb(234, 39, 39)',
   PARTIAL_SUCCESS: 'rgb(255, 193, 7)',
+  CANCELLED: 'rgb(117, 117, 117)',
   FROM_AUTOLIST: 'rgb(114, 201, 218)'
 };
 
@@ -27,10 +29,12 @@ export const STATUS_COLORS: Record<PublicationStatus, string> = {
 export const STATUS_TEXTS: Record<PublicationStatus, string> = {
   PUBLISHED: 'Publicado / Enviado',
   SCHEDULED: 'Pendiente',
+  PROCESSING: 'Procesando',
   DRAFT: 'Borrador',
   FAILED: 'Con errores',
   ERROR: 'Con errores',
   PARTIAL_SUCCESS: 'Éxito parcial',
+  CANCELLED: 'Cancelada',
   FROM_AUTOLIST: 'Desde autolista'
 };
 

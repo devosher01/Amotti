@@ -2,7 +2,7 @@ import {
   ExternalAccount,
   PlatformConnection,
   AuthResult,
-  ConnectionsData,
+  ConnectionsApiResponse,
   LinkedAccount,
   DisconnectionResult,
   ConnectionId,
@@ -23,7 +23,7 @@ export interface ConnectionsStorageService {
     status?: string;
     page?: number;
     limit?: number;
-  }): Promise<ConnectionsData>;
+  }): Promise<ConnectionsApiResponse>;
   getConnection(connectionId: ConnectionId): Promise<PlatformConnection | null>;
   deleteConnection(connectionId: ConnectionId): Promise<DisconnectionResult>;
   refreshConnection(connectionId: ConnectionId): Promise<AuthResult>;

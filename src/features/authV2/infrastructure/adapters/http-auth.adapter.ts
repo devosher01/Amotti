@@ -17,7 +17,21 @@ export const httpAuthAdapter: AuthPort = {
   },
 
   async getCurrentUser(): Promise<User> {
-    return httpClient.get('/auth/me');
+    const result = await httpClient.get('/auth/me') as any;
+
+    const user: User = {
+      userId: result.id,
+      email: result.email,
+      firstName: result.firstName,
+      lastName: result.lastName,
+      role: result.role,
+      emailVerified: result.emailVerified,
+      profilePicture: result.image,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+    };
+
+    return user;
   },
 
   async refreshToken(): Promise<AuthResponse> {

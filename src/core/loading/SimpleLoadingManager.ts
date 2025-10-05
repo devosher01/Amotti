@@ -5,6 +5,7 @@ interface LoadingItem {
   priority: 'critical' | 'high' | 'medium' | 'low';
   required: boolean;
   name?: string;
+  startTime?: number;
 }
 
 class SimpleLoadingManager {
@@ -24,6 +25,7 @@ class SimpleLoadingManager {
   register(key: LoadingKey, config: Omit<LoadingItem, 'isLoading'>) {
     this.loadingStates.set(key, {
       isLoading: true,
+      startTime: Date.now(),
       ...config
     });
     this.notifyListeners();
@@ -72,6 +74,24 @@ class SimpleLoadingManager {
       isGlobalLoading: this.isGlobalLoading()
     };
   }
+
+  // 🔍 Debug detallado para desarrollo
+  getDebugInfo() {
+    return Array.from(this.loadingStates.entries()).map(([key, item]) => ({
+      key,
+      name: item.name || key,
+      isLoading: item.isLoading,
+      priority: item.priority || 'medium',
+      required: item.required || false,
+      duration: item.startTime ? Date.now() - item.startTime : 0,
+      startTime: item.startTime || Date.now()
+    }));
+  }
 }
 
 export const simpleLoadingManager = SimpleLoadingManager.getInstance();
+
+// 🔍 Exponer para debug en desarrollo
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  (window as any).simpleLoadingManager = simpleLoadingManager;
+}

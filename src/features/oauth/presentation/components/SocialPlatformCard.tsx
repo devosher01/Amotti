@@ -183,11 +183,11 @@ export const SocialPlatformCard: React.FC<SocialPlatformCardProps> = ({
                       fontSize: "0.875rem"
                     }}
                   >
-                    {connection.pageInfo.name}
+                    {connection.accountName}
                   </Typography>
-                  {connection.pageInfo.category && (
+                  {connection.platform && (
                     <Chip
-                      label={connection.pageInfo.category}
+                      label={connection.platform}
                       size="small"
                       sx={{
                         height: 20,

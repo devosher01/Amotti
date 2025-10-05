@@ -79,6 +79,7 @@ function MainLayoutContent({
   muiTheme: any;
 }) {
   const { isGlobalLoading } = useSimpleLoading();
+  console.log('isGlobalLoading', isGlobalLoading);
 
   return (
     <AppLoadingBoundary isLoading={isGlobalLoading}>

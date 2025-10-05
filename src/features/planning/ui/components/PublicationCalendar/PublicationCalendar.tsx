@@ -51,6 +51,8 @@ export const PublicationCalendar = forwardRef<FullCalendar, PublicationCalendarP
   const themeStyles = useMemo(() => getCalendarThemeStyles(theme), [theme]);
   
   const eventSource = usePublicationsEventSource();
+
+  console.log('🔍 Event source  EN GRANDE PUBLICATION CALENDAR:', eventSource);
   const { handleViewDidMount, handleDateChange } = useCalendarViewSync();
   
   const { handleEventDrop: internalHandleEventDrop, isUpdating, error } = useCalendarEventHandlers();

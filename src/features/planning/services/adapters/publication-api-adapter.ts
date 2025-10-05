@@ -34,7 +34,7 @@ export function createPublicationApiAdapter(httpClient: HttpClient): Publication
       const result = await httpClient.get<{
         success: boolean;
         data: {
-          publications: ApiPublicationData[];
+          items: ApiPublicationData[];
           total: number;
           limit: number;
           offset: number;
@@ -42,12 +42,24 @@ export function createPublicationApiAdapter(httpClient: HttpClient): Publication
         message: string;
       }>(`/publications?${params.toString()}`);
       
+      console.log('🔍 RAW API Response for publications:', {
+        success: result.success,
+        itemsCount: result.data?.items?.length || 0,
+        firstItem: result.data?.items?.[0] || null,
+        sampleDates: result.data?.items?.slice(0, 3)?.map(item => ({
+          id: item.id,
+          createdAt: item.createdAt,
+          scheduledAt: item.scheduledAt,
+          publishedAt: item.publishedAt
+        })) || []
+      });
+      
       return {
-        publications: result.data?.publications?.map(mapApiResponseToPublication) || [],
+        publications: result.data?.items?.map(mapApiResponseToPublication) || [],
         total: result.data?.total || 0,
         limit: result.data?.limit || query.limit || 10,
         offset: result.data?.offset || query.offset || 0,
-        hasMore: (result.data?.offset || 0) + (result.data?.publications?.length || 0) < (result.data?.total || 0)
+        hasMore: (result.data?.offset || 0) + (result.data?.items?.length || 0) < (result.data?.total || 0)
       };
     },
 

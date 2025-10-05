@@ -16,10 +16,21 @@ import { InstagramAccountSelectionModal } from '@/features/oauth/presentation/co
 import { InstagramConnectionModal } from '@/features/oauth/presentation/components/InstagramConnectionModal';
 
 export default function WelcomeDashboard() {
-  const { user } = useUser();
+  let userContextValue;
+  try {
+    userContextValue = useUser();
+    console.log('✅ UserContext available:', userContextValue);
+  } catch (error) {
+    console.error('❌ UserContext error:', error);
+    userContextValue = { user: null, isLoading: false };
+  }
+  
+  const { user, isLoading: userLoading } = userContextValue;
+  const connections = useConnections(!!user);
   const facebook = useFacebook();
   const instagram = useInstagram();
-  const connections = useConnections(!!user);
+  
+  console.log('🔍 WelcomeDashboard - User state:', { user, userLoading, typeof_user: typeof user });
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [demoOpen, setDemoOpen] = useState(false);
@@ -27,11 +38,25 @@ export default function WelcomeDashboard() {
   const [instagramSelectionOpen, setInstagramSelectionOpen] = useState(false);
 
   const handleConnectPlatform = async (platform: string) => {
-    if (!user?.userId) return;
+    console.log('🔍 handleConnectPlatform called with platform:', platform);
+    console.log('🔍 User:', user?.userId);
+    
+    if (!user?.userId) {
+      console.log('❌ No user found, aborting connection');
+      return;
+    }
 
     if (platform === 'facebook') {
-      await facebook.startOAuth();
+      console.log('🚀 Starting Facebook OAuth...');
+      console.log('🔍 Facebook hook state:', { isLoading: facebook.isLoading, error: facebook.error });
+      try {
+        const result = await facebook.startOAuth();
+        console.log('🔍 Facebook OAuth result:', result);
+      } catch (error) {
+        console.error('❌ Facebook OAuth error:', error);
+      }
     } else if (platform === 'instagram') {
+      console.log('📱 Opening Instagram modal...');
       setInstagramModalOpen(true);
     } else {
       console.log(`${platform} estará disponible próximamente`);
@@ -41,34 +66,47 @@ export default function WelcomeDashboard() {
   const handleSelectFacebookPage = async (pageId: string) => {
     facebook.reset();
     const result = await facebook.connectPage(pageId);
+    
     if (result.success) {
-      connections.refetch();
+      connections.invalidateConnections();
     }
   };
 
   const handleConnectInstagramViaFacebook = async () => {
     setInstagramModalOpen(false);
 
-    const facebookConnection = connections.connections.find(
-      conn => conn.platform === 'facebook' && conn.status === 'active'
+    // Get flat array of all connections from ConnectionsApiResponse
+    const allConnections = [
+      ...(connections.connections.facebook || []),
+      ...(connections.connections.instagram || [])
+    ];
+    
+    const facebookConnection = allConnections.find(
+      conn => conn.platform === 'facebook' && conn.isActive
     );
 
     if (!facebookConnection) {
       return;
     }
 
-    await instagram.getAccountsFromFacebook(facebookConnection.pageInfo?.id);
+    await instagram.getAccountsFromFacebook(facebookConnection.accountId);
     setInstagramSelectionOpen(true);
   };
 
   const handleSelectInstagramAccount = async (instagramAccountId: string) => {
-    const facebookConnection = connections.connections.find(
-      conn => conn.platform === 'facebook' && conn.status === 'active'
+    // Get flat array of all connections from ConnectionsApiResponse
+    const allConnections = [
+      ...(connections.connections.facebook || []),
+      ...(connections.connections.instagram || [])
+    ];
+    
+    const facebookConnection = allConnections.find(
+      conn => conn.platform === 'facebook' && conn.isActive
     );
 
     if (!facebookConnection) return;
 
-    const result = await instagram.connectViaFacebook(facebookConnection.pageInfo?.id, instagramAccountId);
+    const result = await instagram.connectViaFacebook(facebookConnection.accountId, instagramAccountId);
 
     if (result.success) {
       setInstagramSelectionOpen(false);

@@ -33,6 +33,10 @@ export function mapPublicationToEvent(pub: Publication): CalendarEventInput | nu
     return null;
   }
 
+  if (!pub.scheduledAt) {
+    console.log('DEBUG XXXXX: Start date for publication', pub.id, 'is set to:', pub.createdAt);
+  }
+
   const start = new Date(startDate);
   const end = new Date(start.getTime() + 30 * 60 * 1000);
 
